@@ -1,6 +1,21 @@
 # PRIV-IaaC
 
-## Using `asdf` as version manager for this project dependencies
+Repository containing IaaC used for my personal projects.
+
+## Setup and environment
+
+This repository is meant to be used inside macOS environment.
+
+### Tools
+
+1. `asdf`,
+2. `terraform`,
+3. `packer`,
+4. `1password`,
+5. `editorconfig`,
+6. `vscode`
+
+### Using `asdf` as version manager for this project dependencies
 
 This project utilizes usage of `.tool-versions` to manage versions of the dependencies.
 
