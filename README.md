@@ -2,6 +2,14 @@
 
 Repository containing IaaC used for my personal projects.
 
+## Installing and pre-configuring `proxmox`
+
+- flash with USB/balena,
+- ZFS settings,
+- Repository settings in proxmox,
+- If using two NICs (like in t620), configure one as management NIC,
+- Configure the other as service NIC.
+
 ## Setup and environment
 
 This repository is meant to be used inside macOS environment.
