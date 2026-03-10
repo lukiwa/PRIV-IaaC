@@ -14,6 +14,7 @@ concurrency:
 jobs:
   packer-checks:
     name: Packer checks
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -67,6 +68,7 @@ jobs:
 
   codespell:
     name: Spell check
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
@@ -80,6 +82,7 @@ jobs:
 
   gitleaks:
     name: Secret scan
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
