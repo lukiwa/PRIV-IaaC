@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packer-checks:
+    name: Packer checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: packer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+
+      - name: Packer init
+        run: packer init config.pkr.hcl
+
+      - name: Packer fmt check
+        run: packer fmt -check -recursive .
+
+      - name: Packer validate templates
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' templates < <(find . -type f -name '*.pkr.hcl' ! -name 'config.pkr.hcl' -print0)
+
+          if [[ ${#templates[@]} -eq 0 ]]; then
+            echo "No Packer templates found."
+            exit 0
+          fi
+
+          for template in "${templates[@]}"; do
+            template_dir="$(dirname "$template")"
+            var_file="$template_dir/variables.pkr.hcl"
+
+            cmd=(
+              packer validate
+              -var "proxmox_api_url=https://example.invalid:8006/api2/json"
+              -var "proxmox_api_token_id=ci@pve!ci"
+              -var "proxmox_api_token_secret=dummy-secret"
+            )
+
+            if [[ -f "$var_file" ]]; then
+              cmd+=( -var-file "$var_file" )
+            fi
+
+            cmd+=( "$template" )
+
+            echo "Validating: $template"
+            "${cmd[@]}"
+          done
+
+  codespell:
+    name: Spell check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run codespell
+        uses: codespell-project/actions-codespell@v2
+        with:
+          skip: ".git,*.lock"
+
+  gitleaks:
+    name: Secret scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
