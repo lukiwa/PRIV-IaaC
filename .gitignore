@@ -40,3 +40,4 @@ terraform.rc
 **/variables_secrets.pkr.hcl
 *_bak
 **/*.iso
+**/*.iso.lock
