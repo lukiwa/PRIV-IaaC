@@ -147,24 +147,24 @@ variable "ballooning_minimum" {
   default = "0"
 }
 
-variable "iso_url" {
-  type    = string
-  default = ""
+variable "boot_iso" {
+  type = object({
+    iso_storage_pool = string
+    iso_url          = string
+    iso_checksum     = string
+    unmount          = bool
+  })
+  default = {
+    iso_storage_pool = "local"
+    iso_url          = ""
+    iso_checksum     = ""
+    unmount          = true
+  }
 }
 
-variable "iso_checksum" {
-  type    = string
-  default = ""
-}
-
-variable "iso_storage_pool" {
-  type    = string
-  default = "local"
-}
-
-variable "unmount_iso" {
-  type    = bool
-  default = true
+variable "vm_id" {
+  type = number
+  default = 1000
 }
 
 variable "insecure_skip_tls_verify" {
@@ -240,11 +240,14 @@ source "proxmox-iso" "linux" {
   }
   http_directory            = "${var.http_directory}"
   insecure_skip_tls_verify  = "${var.insecure_skip_tls_verify}"
-  #iso_url                   = "${var.iso_url}"
-  #iso_checksum              = "${var.iso_checksum}"
-  #iso_download_pve          = true
-  iso_file                 = "local:iso/openSUSE-MicroOS-DVD-x86_64-Current.iso"
-  iso_storage_pool          = "${var.iso_storage_pool}"
+  boot_iso {
+    iso_url           = "${var.boot_iso.iso_url}"
+    iso_checksum      = "${var.boot_iso.iso_checksum}"
+    #iso_download_pve  = true
+    #iso_file          = "local:iso/openSUSE-MicroOS-DVD-x86_64-Current.iso"
+    iso_storage_pool  = "${var.boot_iso.iso_storage_pool}"
+    unmount           = var.boot_iso.unmount
+  }
   machine                   = "${var.machine}"
   memory                    = "${var.memory}"
   network_adapters {
@@ -255,6 +258,7 @@ source "proxmox-iso" "linux" {
     vlan_tag                = "${var.network_adapters.vlan_tag}"
   }
   node                      = "${var.proxmox_node}"
+  vm_id                     = "${var.vm_id}"
   os                        = "${var.os}"
   proxmox_url               = "${var.proxmox_api_url}"
   qemu_agent                = "${var.qemu_agent}"
@@ -269,7 +273,6 @@ source "proxmox-iso" "linux" {
   task_timeout              = "${var.task_timeout}"
   template_name             = "${var.template}.${local.packer_timestamp}"
   token                     = "${var.proxmox_api_token_secret}"
-  unmount_iso               = "${var.unmount_iso}"
   username                  = "${var.proxmox_api_token_id}"
 }
 

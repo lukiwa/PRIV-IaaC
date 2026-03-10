@@ -1,6 +1,6 @@
 # PRIV-IaaC
 
-Repository containing IaaC used for my personal projects.
+Infrastructure as Code repository for personal environments.
 
 ## Installing and pre-configuring `proxmox`
 
@@ -12,22 +12,22 @@ Repository containing IaaC used for my personal projects.
 
 ## Setup and environment
 
-This repository is meant to be used inside macOS environment.
+This repository is intended for macOS.
 
-### Tools
+Required tools:
 
-1. `asdf`,
-2. `terraform`,
-3. `packer`,
-4. `1password`,
-5. `editorconfig`,
-6. `vscode`
+- `asdf`
+- `terraform`
+- `packer`
+- `1password`
+- `editorconfig`
+- `vscode`
 
-### Using `asdf` as version manager for this project dependencies
+## Tool version management (`asdf`)
 
-This project utilizes usage of `.tool-versions` to manage versions of the dependencies.
+Tool versions are defined in `.tool-versions`.
 
-Installation:
+Install `asdf`:
 
 ```sh
 brew install asdf
@@ -35,13 +35,17 @@ echo -e "\n. $(brew --prefix asdf)/libexec/asdf.sh" >> ${ZDOTDIR:-~}/.zshrc
 source ${ZDOTDIR:-~}/.zshrc
 ```
 
-Then, you can use `asdf` to manage the versions, for example:
+Install plugins and configured versions:
 
 ```sh
 asdf plugin add terraform
 asdf plugin add packer
 asdf install
 ```
+
+## Proxmox
+
+Packer and Proxmox build configuration is located in [packer/](packer/).
 
 ## License
 
