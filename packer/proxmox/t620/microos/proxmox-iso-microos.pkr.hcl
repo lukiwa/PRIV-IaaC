@@ -19,14 +19,6 @@ variable "boot_command" {
   default = ""
 }
 
-#variable "ansible_verbosity" {
-#  type    = list(string)
-#}
-
-#variable "ansible_extra_args" {
-#type    = list(string)
-#}
-
 variable "memory" {
   type    = string
   default = "4096"
@@ -248,8 +240,10 @@ source "proxmox-iso" "linux" {
   }
   http_directory            = "${var.http_directory}"
   insecure_skip_tls_verify  = "${var.insecure_skip_tls_verify}"
-  iso_url                   = "${var.iso_url}"
-  iso_checksum              = "${var.iso_checksum}"
+  #iso_url                   = "${var.iso_url}"
+  #iso_checksum              = "${var.iso_checksum}"
+  #iso_download_pve          = true
+  iso_file                 = "local:iso/openSUSE-MicroOS-DVD-x86_64-Current.iso"
   iso_storage_pool          = "${var.iso_storage_pool}"
   machine                   = "${var.machine}"
   memory                    = "${var.memory}"
@@ -266,9 +260,9 @@ source "proxmox-iso" "linux" {
   qemu_agent                = "${var.qemu_agent}"
   scsi_controller           = "${var.scsi_controller}"
   sockets                   = "${var.sockets}"
-  ssh_password              = "${var.ssh_password}"
   ssh_port                  = "${var.ssh_port}"
   ssh_username              = "${var.ssh_username}"
+  ssh_password              = "${var.ssh_password}"
   ssh_timeout               = "${var.ssh_timeout}"
   ssh_handshake_attempts    = "${var.ssh_handshake_attempts}"
   tags                      = "${var.tags}"
@@ -282,16 +276,10 @@ source "proxmox-iso" "linux" {
 build {
   sources = ["source.proxmox-iso.linux"]
 
-  #provisioner "file" {
-  #  destination = "/etc/cloud/${var.cloud-init_cfg_name}"
-  #  source      = "${var.cloud-init_path}/${var.cloud-init_cfg_name}"
-  #  pause_before = "5m" # wait for autoyast2 stage 2 to finish
-  #}
-
-  provisioner "shell" {
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
-    inline          = ["systemctl enable qemu-guest-agent.service --now"]
-    inline_shebang  = "/bin/sh -x"
-    pause_before    = "10m" # wait for autoyast2 stage 2 to finish
+  provisioner "file" {
+    destination = "/etc/cloud/${var.cloud-init_cfg_name}"
+    source      = "${var.cloud-init_path}/${var.cloud-init_cfg_name}"
+    pause_before = "3m" # wait for autoyast2 stage 2 to finish
   }
+
 }

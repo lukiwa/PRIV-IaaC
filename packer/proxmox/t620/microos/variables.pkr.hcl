@@ -1,5 +1,3 @@
-#ansible_extra_args        = ["-e", "@extra/playbooks/provision_alma8_variables.yml", "-e", "@variables/almalinux8.yml","--scp-extra-args", "'-O'"]
-#ansible_verbosity         = ["-v"]
 ballooning_minimum        = "0"
 boot_command              = "<esc><enter><wait> linux textmode=1 autoyast=http://{{ .HTTPIP }}:{{ .HTTPPort }}/autoinst.xml <wait5><enter>"
 boot_wait                 = "15s"
@@ -36,8 +34,8 @@ scsi_controller           = "virtio-scsi-single"
 sockets                   = "1"
 ssh_password              = "password"
 ssh_username              = "root"
-ssh_timeout               = "20m"
+ssh_timeout               = "40m"
 ssh_handshake_attempts    = 500
-task_timeout              = "30m"
+task_timeout              = "1h"
 template                  = "microos"
 unmount_iso               = true

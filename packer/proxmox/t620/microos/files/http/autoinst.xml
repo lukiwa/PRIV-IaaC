@@ -274,6 +274,7 @@
         <service>prepare-nextroot-for-softreboot</service>
         <service>rebootmgr</service>
         <service>soft-reboot-cleanup</service>
+        <service>qemu-guest-agent</service>
         <service>sshd</service>
         <service>systemd-pstore</service>
         <service>systemd-remount-fs</service>
@@ -298,6 +299,8 @@
       <package>e2fsprogs</package>
       <package>dracut</package>
       <package>btrfsprogs</package>
+      <package>cloud-init</package>
+      <package>qemu-guest-agent</package>
       <package>NetworkManager</package>
       <package>MicroOS-release</package>
     </packages>
@@ -441,4 +444,15 @@
       <username>systemd-timesync</username>
     </user>
   </users>
+  <files config:type="list">
+    <file>
+      <file_path>/etc/ssh/sshd_config.d/10-root-login.conf</file_path>
+      <file_contents>
+  <![CDATA[
+  PermitRootLogin yes
+  PasswordAuthentication yes
+  ]]>
+      </file_contents>
+    </file>
+  </files>
 </profile>
