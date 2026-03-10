@@ -2,20 +2,20 @@
 
 # Variable Definitions
 variable "proxmox_api_url" {
-    type = string
+  type = string
 }
 
 variable "proxmox_api_token_id" {
-    type = string
+  type = string
 }
 
 variable "proxmox_api_token_secret" {
-    type      = string
-    sensitive = true
+  type      = string
+  sensitive = true
 }
 
 variable "boot_command" {
-  type = string
+  type    = string
   default = ""
 }
 
@@ -25,28 +25,28 @@ variable "memory" {
 }
 
 variable "ssh_username" {
-  type = string
+  type    = string
   default = "root"
 }
 
 variable "ssh_password" {
-  type = string
+  type      = string
   sensitive = true
-  default = "password"
+  default   = "password"
 }
 
 variable "ssh_timeout" {
-  type = string
+  type    = string
   default = "10000s"
 }
 
 variable "ssh_port" {
-  type = number
+  type    = number
   default = 22
 }
 
 variable "ssh_handshake_attempts" {
-  type = number
+  type    = number
   default = 200
 }
 variable "template" {
@@ -163,7 +163,7 @@ variable "boot_iso" {
 }
 
 variable "vm_id" {
-  type = number
+  type    = number
   default = 1000
 }
 
@@ -193,7 +193,7 @@ variable "efi_storage_pool" {
 }
 
 variable "pre_enrolled_keys" {
-  type = bool
+  type    = bool
   default = false
 }
 
@@ -213,7 +213,7 @@ variable "machine" {
 }
 
 variable "tags" {
-  type = string
+  type    = string
   default = "bios;template"
 }
 
@@ -222,66 +222,66 @@ locals {
 }
 
 source "proxmox-iso" "linux" {
-  ballooning_minimum        = "${var.ballooning_minimum}"
-  boot_command              = ["${var.boot_command}"]
-  boot_wait                 = "${var.boot_wait}"
-  bios                      = "${var.bios}"
-  cores                     = "${var.cores}"
-  cpu_type                  = "${var.cpu_type}"
-  disable_kvm               = "${var.disable_kvm}"
+  ballooning_minimum = "${var.ballooning_minimum}"
+  boot_command       = ["${var.boot_command}"]
+  boot_wait          = "${var.boot_wait}"
+  bios               = "${var.bios}"
+  cores              = "${var.cores}"
+  cpu_type           = "${var.cpu_type}"
+  disable_kvm        = "${var.disable_kvm}"
   disks {
-    cache_mode              = "${var.disks.cache_mode}"
-    disk_size               = "${var.disks.disk_size}"
-    format                  = "${var.disks.format}"
-    storage_pool            = "${var.disks.storage_pool}"
-    type                    = "${var.disks.type}"
-    io_thread               = "${var.disks.io_thread}"
-    discard                 = "${var.disks.discard}"
+    cache_mode   = "${var.disks.cache_mode}"
+    disk_size    = "${var.disks.disk_size}"
+    format       = "${var.disks.format}"
+    storage_pool = "${var.disks.storage_pool}"
+    type         = "${var.disks.type}"
+    io_thread    = "${var.disks.io_thread}"
+    discard      = "${var.disks.discard}"
   }
-  http_directory            = "${var.http_directory}"
-  insecure_skip_tls_verify  = "${var.insecure_skip_tls_verify}"
+  http_directory           = "${var.http_directory}"
+  insecure_skip_tls_verify = "${var.insecure_skip_tls_verify}"
   boot_iso {
-    iso_url           = "${var.boot_iso.iso_url}"
-    iso_checksum      = "${var.boot_iso.iso_checksum}"
+    iso_url      = "${var.boot_iso.iso_url}"
+    iso_checksum = "${var.boot_iso.iso_checksum}"
     #iso_download_pve  = true
     #iso_file          = "local:iso/openSUSE-MicroOS-DVD-x86_64-Current.iso"
-    iso_storage_pool  = "${var.boot_iso.iso_storage_pool}"
-    unmount           = var.boot_iso.unmount
+    iso_storage_pool = "${var.boot_iso.iso_storage_pool}"
+    unmount          = var.boot_iso.unmount
   }
-  machine                   = "${var.machine}"
-  memory                    = "${var.memory}"
+  machine = "${var.machine}"
+  memory  = "${var.memory}"
   network_adapters {
-    bridge                  = "${var.network_adapters.bridge}"
-    model                   = "${var.network_adapters.model}"
-    firewall                = "${var.network_adapters.firewall}"
-    mac_address             = "${var.network_adapters.mac_address}"
-    vlan_tag                = "${var.network_adapters.vlan_tag}"
+    bridge      = "${var.network_adapters.bridge}"
+    model       = "${var.network_adapters.model}"
+    firewall    = "${var.network_adapters.firewall}"
+    mac_address = "${var.network_adapters.mac_address}"
+    vlan_tag    = "${var.network_adapters.vlan_tag}"
   }
-  node                      = "${var.proxmox_node}"
-  vm_id                     = "${var.vm_id}"
-  os                        = "${var.os}"
-  proxmox_url               = "${var.proxmox_api_url}"
-  qemu_agent                = "${var.qemu_agent}"
-  scsi_controller           = "${var.scsi_controller}"
-  sockets                   = "${var.sockets}"
-  ssh_port                  = "${var.ssh_port}"
-  ssh_username              = "${var.ssh_username}"
-  ssh_password              = "${var.ssh_password}"
-  ssh_timeout               = "${var.ssh_timeout}"
-  ssh_handshake_attempts    = "${var.ssh_handshake_attempts}"
-  tags                      = "${var.tags}"
-  task_timeout              = "${var.task_timeout}"
-  template_name             = "${var.template}.${local.packer_timestamp}"
-  token                     = "${var.proxmox_api_token_secret}"
-  username                  = "${var.proxmox_api_token_id}"
+  node                   = "${var.proxmox_node}"
+  vm_id                  = "${var.vm_id}"
+  os                     = "${var.os}"
+  proxmox_url            = "${var.proxmox_api_url}"
+  qemu_agent             = "${var.qemu_agent}"
+  scsi_controller        = "${var.scsi_controller}"
+  sockets                = "${var.sockets}"
+  ssh_port               = "${var.ssh_port}"
+  ssh_username           = "${var.ssh_username}"
+  ssh_password           = "${var.ssh_password}"
+  ssh_timeout            = "${var.ssh_timeout}"
+  ssh_handshake_attempts = "${var.ssh_handshake_attempts}"
+  tags                   = "${var.tags}"
+  task_timeout           = "${var.task_timeout}"
+  template_name          = "${var.template}.${local.packer_timestamp}"
+  token                  = "${var.proxmox_api_token_secret}"
+  username               = "${var.proxmox_api_token_id}"
 }
 
 build {
   sources = ["source.proxmox-iso.linux"]
 
   provisioner "file" {
-    destination = "/etc/cloud/${var.cloud-init_cfg_name}"
-    source      = "${var.cloud-init_path}/${var.cloud-init_cfg_name}"
+    destination  = "/etc/cloud/${var.cloud-init_cfg_name}"
+    source       = "${var.cloud-init_path}/${var.cloud-init_cfg_name}"
     pause_before = "3m" # wait for autoyast2 stage 2 to finish
   }
 
