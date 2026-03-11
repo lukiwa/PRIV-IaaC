@@ -238,7 +238,7 @@ source "proxmox-iso" "linux" {
     io_thread    = "${var.disks.io_thread}"
     discard      = "${var.disks.discard}"
   }
-  http_directory           = "${var.http_directory}"
+  http_directory           = "${path.root}/${var.http_directory}"
   insecure_skip_tls_verify = "${var.insecure_skip_tls_verify}"
   boot_iso {
     iso_url      = "${var.boot_iso.iso_url}"
@@ -281,7 +281,7 @@ build {
 
   provisioner "file" {
     destination  = "/etc/cloud/${var.cloud-init_cfg_name}"
-    source       = "${var.cloud-init_path}/${var.cloud-init_cfg_name}"
+    source       = "${path.root}/${var.cloud-init_path}/${var.cloud-init_cfg_name}"
     pause_before = "3m" # wait for autoyast2 stage 2 to finish
   }
 
