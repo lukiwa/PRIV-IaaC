@@ -1,5 +1,3 @@
-name: CI - Packer
-
 on:
   pull_request:
   workflow_dispatch:
@@ -38,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          mapfile -d '' templates < <(find . -type f -name '*.pkr.hcl' ! -name 'config.pkr.hcl' -print0)
+          mapfile -d '' templates < <(find . -type f -name '*.pkr.hcl' ! -name 'config.pkr.hcl' ! -name 'variables.pkr.hcl' ! -name 'variables_secrets.pkr.hcl' ! -name '*.example' -print0)
 
           if [[ ${#templates[@]} -eq 0 ]]; then
             echo "No Packer templates found."
@@ -48,21 +46,26 @@ jobs:
           for template in "${templates[@]}"; do
             template_dir="$(dirname "$template")"
             var_file="$template_dir/variables.pkr.hcl"
+            template_filename="$(basename "$template")"
 
             cmd=(
               packer validate
-              -var "proxmox_api_url=https://example.invalid:8006/api2/json"
-              -var "proxmox_api_token_id=ci@pve!ci"
-              -var "proxmox_api_token_secret=dummy-secret"
             )
 
-            if [[ -f "$var_file" ]]; then
-              cmd+=( -var-file "$var_file" )
+            if [[ "$template" == ./proxmox/* || "$template" == proxmox/* ]]; then
+              cmd+=(
+                -var "proxmox_api_url=https://example.invalid:8006/api2/json"
+                -var "proxmox_api_token_id=ci@pve!ci"
+                -var "proxmox_api_token_secret=dummy-secret"
+              )
             fi
 
-            cmd+=( "$template" )
+            if [[ -f "$var_file" ]]; then
+              cmd+=( -var-file "variables.pkr.hcl" )
+            fi
+
+            cmd+=( "$template_filename" )
 
             echo "Validating: $template"
-            "${cmd[@]}"
+            (cd "$template_dir" && "${cmd[@]}")
           done
-
