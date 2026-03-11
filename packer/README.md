@@ -21,11 +21,12 @@ packer validate -var-file='variables.pkr.hcl' -var-file='variables_secrets.pkr.h
 packer build -force -var-file='variables.pkr.hcl' -var-file='variables_secrets.pkr.hcl' proxmox-iso-microos.pkr.hcl
 ```
 
-## Current template assumptions (MicroOS)
+## MicroOS template
 
-- `root` SSH login with password is enabled so Packer can complete provisioning.
-- `qemu-guest-agent` is required for IP detection.
-- `cloud-init` is installed in the base image for use in cloned VMs.
+- `root` SSH login with password is enabled so Packer can complete provisioning,
+- `qemu-guest-agent` is required for IP detection,
+- `cloud-init` is installed in the base image for use in cloned VMs,
+- `autoinst.xml` file has been generated from basic microos installation and was modified with above settings.
 
 ## Known issues
 
