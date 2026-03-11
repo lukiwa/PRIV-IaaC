@@ -45,7 +45,7 @@ asdf install
 
 ## Proxmox
 
-Packer and Proxmox build configuration is located in [packer/](packer/).
+Packer and Proxmox build configuration is located in [packer/proxmox/](packer/proxmox/).
 
 ## License
 
