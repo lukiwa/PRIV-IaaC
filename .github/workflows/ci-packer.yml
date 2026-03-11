@@ -1,5 +1,8 @@
 on:
   pull_request:
+    paths:
+      - packer/**
+      - .github/workflows/ci-packer.yml
   workflow_dispatch:
 
 permissions:
@@ -17,7 +20,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: packer
+        working-directory: packer/proxmox
 
     steps:
       - name: Checkout
@@ -45,6 +48,7 @@ jobs:
 
           for template in "${templates[@]}"; do
             template_dir="$(dirname "$template")"
+            parent_var_file="$(dirname "$template_dir")/variables.pkr.hcl"
             var_file="$template_dir/variables.pkr.hcl"
             template_filename="$(basename "$template")"
 
@@ -52,12 +56,14 @@ jobs:
               packer validate
             )
 
-            if [[ "$template" == ./proxmox/* || "$template" == proxmox/* ]]; then
-              cmd+=(
-                -var "proxmox_api_url=https://example.invalid:8006/api2/json"
-                -var "proxmox_api_token_id=ci@pve!ci"
-                -var "proxmox_api_token_secret=dummy-secret"
-              )
+            cmd+=(
+              -var "proxmox_api_url=https://example.invalid:8006/api2/json"
+              -var "proxmox_api_token_id=ci@pve!ci"
+              -var "proxmox_api_token_secret=dummy-secret"
+            )
+
+            if [[ -f "$parent_var_file" ]]; then
+              cmd+=( -var-file "../variables.pkr.hcl" )
             fi
 
             if [[ -f "$var_file" ]]; then
