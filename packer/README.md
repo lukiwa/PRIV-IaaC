@@ -17,8 +17,8 @@ Force option is used to delete old templates. Run from [packer/](.) directory:
 
 ```sh
 packer init config.pkr.hcl
-packer validate -var-file='proxmox/t620/microos/variables.pkr.hcl' -var-file='proxmox/t620/variables_secrets.pkr.hcl' proxmox/t620/microos/proxmox-iso-microos.pkr.hcl
-packer build -force -var-file='proxmox/t620/microos/variables.pkr.hcl' -var-file='proxmox/t620/variables_secrets.pkr.hcl' proxmox/t620/microos/proxmox-iso-microos.pkr.hcl
+packer validate -var-file='variables.pkr.hcl' -var-file='variables_secrets.pkr.hcl' proxmox-iso-microos.pkr.hcl
+packer build -force -var-file='variables.pkr.hcl' -var-file='variables_secrets.pkr.hcl' proxmox-iso-microos.pkr.hcl
 ```
 
 ## Current template assumptions (MicroOS)
