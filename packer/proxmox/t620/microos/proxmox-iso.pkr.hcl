@@ -6,7 +6,7 @@ variable "proxmox_api_url" {
 }
 
 variable "proxmox_api_token_id" {
-  type      = string
+  type = string
   sensitive = true
 }
 
