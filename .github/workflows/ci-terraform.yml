@@ -30,23 +30,41 @@ jobs:
       - name: Terraform fmt check
         run: terraform fmt -check -recursive terraform
 
-      - name: Terraform init + validate (all modules)
+      - name: Terraform init + validate (root modules)
         shell: bash
         run: |
           set -euo pipefail
 
-          declare -A tf_dirs=()
+          declare -A all_tf_dirs=()
+          declare -A root_tf_dirs=()
 
           while IFS= read -r -d '' tf_file; do
-            tf_dirs["$(dirname "$tf_file")"]=1
+            all_tf_dirs["$(dirname "$tf_file")"]=1
           done < <(find terraform -type f -name '*.tf' ! -path '*/.terraform/*' -print0)
 
-          if [[ ${#tf_dirs[@]} -eq 0 ]]; then
+          if [[ ${#all_tf_dirs[@]} -eq 0 ]]; then
             echo "No Terraform directories found."
             exit 0
           fi
 
-          for dir in "${!tf_dirs[@]}"; do
+          for dir in "${!all_tf_dirs[@]}"; do
+            parent="$(dirname "$dir")"
+            is_child_module=false
+
+            while [[ "$parent" == terraform/* ]]; do
+              if [[ -n "${all_tf_dirs[$parent]:-}" ]]; then
+                is_child_module=true
+                break
+              fi
+              parent="$(dirname "$parent")"
+            done
+
+            if [[ "$is_child_module" == false ]]; then
+              root_tf_dirs["$dir"]=1
+            fi
+          done
+
+          for dir in $(printf '%s\n' "${!root_tf_dirs[@]}" | sort); do
             echo "Validating: $dir"
             (
               cd "$dir"
