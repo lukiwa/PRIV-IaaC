@@ -43,9 +43,9 @@ resource "proxmox_vm_qemu" "microos-media" {
   memory = 4096
 
   network {
-    id     = 0
-    bridge = "vmbr1"
-    model  = "virtio"
+    id      = 0
+    bridge  = "vmbr1"
+    model   = "virtio"
     macaddr = var.media_macaddr
   }
 
@@ -62,11 +62,11 @@ resource "proxmox_vm_qemu" "microos-media" {
     type    = "cloudinit"
   }
 
-  os_type  = "cloud-init"
-  ipconfig0 = "ip=dhcp"
-  cicustom = "vendor=local:snippets/microos-media-vendor.yml"
-  ciupgrade = true
-  ciuser   = "mediauser"
+  os_type    = "cloud-init"
+  ipconfig0  = "ip=dhcp"
+  cicustom   = "vendor=local:snippets/microos-media-vendor.yml"
+  ciupgrade  = true
+  ciuser     = "mediauser"
   cipassword = var.media_password
-  sshkeys  = var.media_public_key
+  sshkeys    = var.media_public_key
 }
