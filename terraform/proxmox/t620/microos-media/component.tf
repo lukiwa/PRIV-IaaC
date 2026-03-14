@@ -2,7 +2,7 @@
 # loaded from terraform/proxmox/variables_secrets.tfvars.
 
 resource "terraform_data" "cloud_init_upload" {
-  triggers_replace = filemd5("${path.module}/cloud-init/vendor-data.yml")
+  triggers_replace = [filemd5("${path.module}/cloud-init/vendor-data.yml")]
 
   connection {
     type     = "ssh"
