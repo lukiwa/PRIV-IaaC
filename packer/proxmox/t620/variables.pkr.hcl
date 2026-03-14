@@ -6,7 +6,7 @@ disable_kvm        = false
 
 disks = {
   cache_mode   = "none"
-  disk_size    = "25G"
+  disk_size    = "20G"
   format       = "raw"
   type         = "virtio"
   storage_pool = "local-zfs"
@@ -25,9 +25,12 @@ network_adapters = {
   vlan_tag    = ""
 }
 
-proxmox_node    = "t620"
-qemu_agent      = true
-scsi_controller = "virtio-scsi-single"
-sockets         = "1"
-ssh_password    = "password"
-ssh_username    = "root"
+proxmox_node            = "t620"
+qemu_agent              = true
+scsi_controller         = "virtio-scsi-single"
+cloud_init              = true
+cloud_init_storage_pool = "local-zfs"
+cloud_init_disk_type    = "scsi"
+sockets                 = "1"
+ssh_password            = "password"
+ssh_username            = "root"
