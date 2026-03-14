@@ -6,7 +6,8 @@ variable "proxmox_api_url" {
 }
 
 variable "proxmox_api_token_id" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "proxmox_api_token_secret" {
@@ -59,10 +60,26 @@ variable "cloud-init_path" {
   default = ""
 }
 
+variable "cloud_init" {
+  type    = bool
+  default = false
+}
+
+variable "cloud_init_storage_pool" {
+  type    = string
+  default = "local-zfs"
+}
+
 variable "cloud-init_cfg_name" {
   type    = string
   default = ""
 }
+
+variable "cloud_init_disk_type" {
+  type    = string
+  default = ""
+}
+
 
 variable "http_directory" {
   type    = string
@@ -257,23 +274,26 @@ source "proxmox-iso" "linux" {
     mac_address = "${var.network_adapters.mac_address}"
     vlan_tag    = "${var.network_adapters.vlan_tag}"
   }
-  node                   = "${var.proxmox_node}"
-  vm_id                  = "${var.vm_id}"
-  os                     = "${var.os}"
-  proxmox_url            = "${var.proxmox_api_url}"
-  qemu_agent             = "${var.qemu_agent}"
-  scsi_controller        = "${var.scsi_controller}"
-  sockets                = "${var.sockets}"
-  ssh_port               = "${var.ssh_port}"
-  ssh_username           = "${var.ssh_username}"
-  ssh_password           = "${var.ssh_password}"
-  ssh_timeout            = "${var.ssh_timeout}"
-  ssh_handshake_attempts = "${var.ssh_handshake_attempts}"
-  tags                   = "${var.tags}"
-  task_timeout           = "${var.task_timeout}"
-  template_name          = "${var.template}.${local.packer_timestamp}"
-  token                  = "${var.proxmox_api_token_secret}"
-  username               = "${var.proxmox_api_token_id}"
+  node                    = "${var.proxmox_node}"
+  vm_id                   = "${var.vm_id}"
+  os                      = "${var.os}"
+  proxmox_url             = "${var.proxmox_api_url}"
+  qemu_agent              = "${var.qemu_agent}"
+  cloud_init              = "${var.cloud_init}"
+  cloud_init_storage_pool = "${var.cloud_init_storage_pool}"
+  cloud_init_disk_type    = "${var.cloud_init_disk_type}"
+  scsi_controller         = "${var.scsi_controller}"
+  sockets                 = "${var.sockets}"
+  ssh_port                = "${var.ssh_port}"
+  ssh_username            = "${var.ssh_username}"
+  ssh_password            = "${var.ssh_password}"
+  ssh_timeout             = "${var.ssh_timeout}"
+  ssh_handshake_attempts  = "${var.ssh_handshake_attempts}"
+  tags                    = "${var.tags}"
+  task_timeout            = "${var.task_timeout}"
+  template_name           = "${var.template}.${local.packer_timestamp}"
+  token                   = "${var.proxmox_api_token_secret}"
+  username                = "${var.proxmox_api_token_id}"
 }
 
 build {

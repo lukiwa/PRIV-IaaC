@@ -1,7 +1,7 @@
 boot_command        = "<esc><enter><wait> linux textmode=1 autoyast=http://{{ .HTTPIP }}:{{ .HTTPPort }}/autoinst.xml <wait5><enter>"
 http_directory      = "files/http"
 cloud-init_path     = "files/cloud-init"
-cloud-init_cfg_name = "99-packer.cfg"
+cloud-init_cfg_name = "1-packer.cfg"
 boot_iso = {
   iso_storage_pool = "local"
   iso_url          = "https://download.opensuse.org/tumbleweed/iso/openSUSE-MicroOS-DVD-x86_64-Current.iso"
