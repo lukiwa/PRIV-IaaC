@@ -1,0 +1,34 @@
+#cloud-config
+# As redundant as it may seem:
+# - root login disabled from: PVE passwd, SSH passwd, SSH key, su passwd
+# - mediauser login enabled from: PVE passwd, SSH key
+# - mediauser access to sudo with it's password, but not root password, and not without password
+
+disable_root: true
+ssh_pwauth: false
+
+bootcmd:
+  - usermod -L root
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-cloud-hardening.conf
+    permissions: "0640"
+    owner: root:root
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      ChallengeResponseAuthentication no
+      PubkeyAuthentication yes
+      PermitRootLogin no
+  - path: /etc/sudoers.d/99-mediauser-require-password
+    permissions: "0440"
+    owner: root:root
+    content: |
+      Defaults:mediauser !targetpw
+      Defaults:mediauser !rootpw
+      Defaults:mediauser !runaspw
+      mediauser ALL=(ALL:ALL) ALL
+
+runcmd:
+  - usermod -aG wheel mediauser
+  - systemctl restart sshd
