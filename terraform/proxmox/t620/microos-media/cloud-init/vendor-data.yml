@@ -2,7 +2,7 @@
 # As redundant as it may seem:
 # - root login disabled from: PVE passwd, SSH passwd, SSH key, su passwd
 # - mediauser login enabled from: PVE passwd, SSH key
-# - mediauser access to sudo with it's password, but not root password, and not without password
+ # - mediauser access to sudo with its password, but not root password, and not without password
 
 disable_root: true
 ssh_pwauth: false

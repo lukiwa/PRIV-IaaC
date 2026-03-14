@@ -11,7 +11,7 @@ Stacks are defined as modules, for example:
 
 - [t620/microos-media](t620/microos-media)
 
-Has predefined macaddres, and added static lease for it in OPNSense.
+ Has predefined MAC address, and added static lease for it in OPNSense.
 
 Usage:
 
