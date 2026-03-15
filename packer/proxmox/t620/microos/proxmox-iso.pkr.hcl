@@ -305,4 +305,25 @@ build {
     pause_before = "3m" # wait for autoyast2 stage 2 to finish
   }
 
+  # Remove cd:// repositories so all clones have working online repos.
+  provisioner "shell" {
+    inline = [
+      "set -euxo pipefail",
+      "for f in /etc/zypp/repos.d/*.repo; do [ -f \"$f\" ] || continue; if grep -q '^baseurl=cd:/' \"$f\"; then rm -f \"$f\"; fi; done",
+      "zypper --non-interactive ar -f http://download.opensuse.org/tumbleweed/repo/oss/ repo-oss",
+      "zypper --non-interactive ar -f http://download.opensuse.org/tumbleweed/repo/non-oss/ repo-non-oss",
+      "zypper --non-interactive ar -f http://download.opensuse.org/update/tumbleweed/ repo-update",
+      "zypper --non-interactive ar -f http://codecs.opensuse.org/openh264/openSUSE_Tumbleweed repo-openh264",
+      "zypper --non-interactive ar -f http://download.opensuse.org/debug/tumbleweed/repo/oss/ repo-debug",
+      "zypper --non-interactive ar -f http://download.opensuse.org/source/tumbleweed/repo/oss/ repo-source",
+      "zypper --non-interactive mr -e -f repo-oss",
+      "zypper --non-interactive mr -e -f repo-non-oss",
+      "zypper --non-interactive mr -e -f repo-update",
+      "zypper --non-interactive mr -e -f repo-openh264",
+      "zypper --non-interactive mr -d repo-debug",
+      "zypper --non-interactive mr -d repo-source",
+      "zypper --non-interactive ref",
+    ]
+  }
+
 }
