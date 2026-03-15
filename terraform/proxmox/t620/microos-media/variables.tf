@@ -23,3 +23,9 @@ variable "media_password" {
   type      = string
   sensitive = true
 }
+
+variable "external_disk_id" {
+  type        = string
+  default     = ""
+  description = "Optional /dev/disk/by-id identifier to passthrough as virtio1. Leave empty to disable passthrough."
+}
