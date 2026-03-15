@@ -300,6 +300,7 @@
       <package>dracut</package>
       <package>btrfsprogs</package>
       <package>cloud-init</package>
+      <package>ntfs-3g</package>
       <package>qemu-guest-agent</package>
       <package>NetworkManager</package>
       <package>MicroOS-release</package>
