@@ -3,7 +3,6 @@
 # - root login disabled from: PVE passwd, SSH passwd, SSH key, su passwd
 # - mediauser login enabled from: PVE passwd, SSH key
 # - mediauser access to sudo with its password, but not root password, and not without password
-# virtio disk is moun
 
 disable_root: true
 ssh_pwauth: false

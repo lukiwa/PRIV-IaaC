@@ -28,11 +28,11 @@ resource "terraform_data" "cloud_init_upload" {
 }
 
 resource "proxmox_vm_qemu" "microos-media" {
-  name        = "microos-media"
-  description = "MicroOS host for media containers"
-  vmid        = 1001
+  name         = "microos-media"
+  description  = "MicroOS host for media containers"
+  vmid         = 1001
   force_create = true
-  target_node = "t620"
+  target_node  = "t620"
 
   depends_on = [
     terraform_data.cloud_init_upload,
