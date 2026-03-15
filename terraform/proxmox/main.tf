@@ -8,4 +8,6 @@ module "t620_microos_media" {
   media_macaddr    = var.t620_microos_media_macaddr
   media_public_key = var.t620_microos_media_public_key
   media_password   = var.t620_microos_media_password
+
+  external_disk_id = var.t620_microos_media_external_disk_id
 }
