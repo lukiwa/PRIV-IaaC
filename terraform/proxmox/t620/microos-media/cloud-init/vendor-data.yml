@@ -2,7 +2,8 @@
 # As redundant as it may seem:
 # - root login disabled from: PVE passwd, SSH passwd, SSH key, su passwd
 # - mediauser login enabled from: PVE passwd, SSH key
- # - mediauser access to sudo with its password, but not root password, and not without password
+# - mediauser access to sudo with its password, but not root password, and not without password
+# virtio disk is moun
 
 disable_root: true
 ssh_pwauth: false
@@ -28,7 +29,22 @@ write_files:
       Defaults:mediauser !rootpw
       Defaults:mediauser !runaspw
       mediauser ALL=(ALL:ALL) ALL
+  - path: /usr/local/sbin/setup-external-ntfs.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      mount_point="/var/mnt/external"
+      uid="$(id -u mediauser)"
+      gid="$(id -g mediauser)"
+
+      mkdir -p "$mount_point"
+      echo "/dev/disk/by-path/virtio-pci-0000:00:0b.0-part1 $mount_point ntfs-3g rw,noatime,nosuid,nodev,nofail,x-systemd.device-timeout=2s,uid=$uid,gid=$gid,dmask=002,fmask=113 0 0" >> /etc/fstab
+      mount -a
 
 runcmd:
   - usermod -aG wheel mediauser
+  - /usr/local/sbin/setup-external-ntfs.sh
   - systemctl restart sshd

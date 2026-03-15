@@ -7,11 +7,9 @@ Shared files:
 - [providers.tf](providers.tf) - common provider and version constraints
 - [variables_secrets.tfvars](variables_secrets.tfvars) - shared secrets (local file)
 
-Stacks are defined as modules, for example:
+## Stacks
 
-- [t620/microos-media](t620/microos-media)
-
- Has predefined MAC address, and added static lease for it in OPNSense.
+- [t620/microos-media](t620/microos-media) — media containers (Plex, etc.)
 
 Usage:
 
@@ -22,3 +20,14 @@ Usage:
 5. Run `terraform apply -var-file=variables_secrets.tfvars`
 
 Note: `.terraform.lock.hcl` is created in [terraform/proxmox](.) and shared by all stacks in this root module.
+
+## User+Password vs Proxmox API Token
+
+This stack intentionally uses `pm_user` + `pm_password` (see [providers.tf](providers.tf)) instead of API token auth.
+
+Reason: for this environment (notably VM disk passthrough with `/dev/disk/by-id/...`) token-based auth led to provider/API permission and behavior issues, described in:
+
+- [Proxmox Bugzilla](https://bugzilla.proxmox.com/show_bug.cgi?id=2582)
+- [Telmate provider issue](https://github.com/Telmate/terraform-provider-proxmox/issues/1056)
+
+Because of that, root login via API user (`root@pam`) is currently the stable option for this project.
