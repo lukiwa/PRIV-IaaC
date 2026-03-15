@@ -98,7 +98,7 @@ resource "terraform_data" "attach_external_disk" {
 
   provisioner "remote-exec" {
     inline = [
-      "qm set ${proxmox_vm_qemu.microos-media.vmid} --virtio1 ${local.external_disk_path},backup=0 && qm reboot ${proxmox_vm_qemu.microos-media.vmid}",
+      "qm set ${proxmox_vm_qemu.microos-media.vmid} --virtio1 \"${local.external_disk_path},backup=0\" && qm reboot ${proxmox_vm_qemu.microos-media.vmid}",
     ]
   }
 }
