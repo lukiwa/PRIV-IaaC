@@ -1,0 +1,12 @@
+- name: Update packages on openSUSE MicroOS (transactional)
+  ansible.builtin.command: transactional-update -n up
+  register: transactional_update_result
+  changed_when: "'No update candidate found' not in transactional_update_result.stdout"
+  when: ansible_facts["distribution"] == "openSUSE MicroOS"
+
+- name: Reboot after transactional update
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after transactional-update"
+  when:
+    - ansible_facts["distribution"] == "openSUSE MicroOS"
+    - transactional_update_result.changed
