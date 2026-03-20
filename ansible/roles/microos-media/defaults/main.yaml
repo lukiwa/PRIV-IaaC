@@ -2,3 +2,12 @@
 packages:
   - podman
   - podman-compose
+  - tree
+
+podman_compose_enabled: true
+podman_compose_user: "{{ ansible_user }}"
+podman_compose_project_dir: "/home/{{ podman_compose_user }}/podman-compose/media"
+podman_compose_file_name: compose.yaml
+podman_compose_data_dir: "{{ podman_compose_project_dir }}/data"
+plex_container_name: plex
+media_mount_root: /var/mnt/external
