@@ -1,12 +1,26 @@
-- name: Update packages on openSUSE MicroOS (transactional)
+- name: Update packages
   ansible.builtin.command: transactional-update -n up
   register: transactional_update_result
   changed_when: "'No update candidate found' not in transactional_update_result.stdout"
-  when: ansible_facts["distribution"] == "openSUSE MicroOS"
+
+- name: Install packages
+  ansible.builtin.command: "transactional-update -n pkg install {{ packages | join(' ') }}"
+  register: transactional_install_result
+  changed_when: true
+  when:
+    - packages is defined
+    - packages | length > 0
+
+- name: Check if reboot is required after update
+  ansible.builtin.set_fact:
+    reboot_required_update: "{{ ((transactional_update_result.stdout | default('')) ~ (transactional_update_result.stderr | default(''))) is search('(?i)reboot') }}"
+
+- name: Check if reboot is required after package install
+  ansible.builtin.set_fact:
+    reboot_required_install: "{{ transactional_install_result is defined and (((transactional_install_result.stdout | default('')) ~ (transactional_install_result.stderr | default(''))) is search('(?i)reboot')) }}"
 
 - name: Reboot after transactional update
   ansible.builtin.reboot:
     msg: "Reboot initiated by Ansible after transactional-update"
   when:
-    - ansible_facts["distribution"] == "openSUSE MicroOS"
-    - transactional_update_result.changed
+    - reboot_required_update or reboot_required_install
