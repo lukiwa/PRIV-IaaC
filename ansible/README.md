@@ -17,8 +17,10 @@ By default, compose files are stored in user home: `/home/{{ ansible_user }}/pod
 
 Default Plex paths:
 
-- config (bind mount): `/home/{{ ansible_user }}/podman-compose/media/data/plex-config`
+- config (bind mount): `/home/{{ ansible_user }}/podman-compose/media/data/{{ plex_container_name }}`
 - media: `/var/mnt/external/{tv,movies,music}`
+
+Container config directories follow the convention: `/data/<container_name>` inside the compose project.
 
 Plex `PUID`/`PGID` are auto-detected from `podman_compose_user`.
 

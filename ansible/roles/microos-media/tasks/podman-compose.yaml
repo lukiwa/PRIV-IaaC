@@ -6,9 +6,17 @@
   become: false
   when: podman_compose_enabled | bool
 
-- name: Ensure Plex config directory exists
+- name: Ensure podman-compose data directory exists
   ansible.builtin.file:
-    path: "{{ plex_config_dir }}"
+    path: "{{ podman_compose_data_dir }}"
+    state: directory
+    mode: "0775"
+  become: false
+  when: podman_compose_enabled | bool
+
+- name: Ensure container config directory exists
+  ansible.builtin.file:
+    path: "{{ podman_compose_data_dir }}/{{ plex_container_name }}"
     state: directory
     mode: "0775"
   become: false

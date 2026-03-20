@@ -7,7 +7,7 @@ networks:
 services:
   plex:
     image: lscr.io/linuxserver/plex:latest
-    container_name: plex
+    container_name: {{ plex_container_name }}
     network_mode: host
     userns_mode: keep-id
     environment:
@@ -15,7 +15,7 @@ services:
       - PGID={{ podman_compose_gid_result.stdout }}
       - VERSION=docker
     volumes:
-      - {{ plex_config_dir }}:/config:Z,U
+      - {{ podman_compose_data_dir }}/{{ plex_container_name }}:/config:Z,U
       - {{ media_mount_root }}/tv:/tv
       - {{ media_mount_root }}/movies:/movies
       - {{ media_mount_root }}/music:/music
