@@ -42,6 +42,10 @@ terraform.rc
 **/*.iso
 **/*.iso.lock
 
-#terraform
+# terraform
 **/variables_secrets.tfvars
 **/module.tf
+
+# ansible
+**/host_vars/*.yaml
+**/host_vars/*.yml

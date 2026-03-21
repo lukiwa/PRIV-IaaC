@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Preferences{% for key, value in microos_media_stack_plex_preferences.items() %} {{ key }}="{{ value | string | replace('&', '&amp;') | replace('"', '&quot;') | replace('<', '&lt;') | replace('>', '&gt;') }}"{% endfor %} />

@@ -1,0 +1,7 @@
+#   op inject -i media-microos.yml.example -o media-microos.yml
+---
+ansible_host: "{{op://Private/Proxmox-T620-Media/ip}}"
+ansible_become_password: "{{op://Private/Proxmox-T620-Media/password}}"
+ansible_user: mediauser
+
+microos_media_plex_x_plex_token: "{{op://Shared/Plex/X-Plex-Token}}"

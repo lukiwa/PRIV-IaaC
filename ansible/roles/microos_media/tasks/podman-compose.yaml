@@ -1,0 +1,26 @@
+- name: Validate podman compose operation per stack
+  ansible.builtin.assert:
+    that:
+      - (stack.operation | default('update')) in ['update', 'deploy']
+    fail_msg: "Stack '{{ stack.name }}' operation must be 'update' or 'deploy'"
+  loop: >-
+    {{ microos_media_podman_compose_stacks
+    | selectattr('enabled', 'equalto', true)
+    | selectattr('name', 'in', microos_media_podman_compose_selected_stacks)
+    | list }}
+  loop_control:
+    loop_var: stack
+    label: "{{ stack.name }}"
+  when: microos_media_podman_compose_enabled | bool
+
+- name: Deploy enabled podman-compose stacks
+  ansible.builtin.include_tasks: "{{ stack.task_file }}"
+  loop: >-
+    {{ microos_media_podman_compose_stacks
+    | selectattr('enabled', 'equalto', true)
+    | selectattr('name', 'in', microos_media_podman_compose_selected_stacks)
+    | list }}
+  loop_control:
+    loop_var: stack
+    label: "{{ stack.name }}"
+  when: microos_media_podman_compose_enabled | bool
