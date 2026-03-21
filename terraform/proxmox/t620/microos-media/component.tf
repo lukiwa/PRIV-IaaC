@@ -46,7 +46,7 @@ resource "proxmox_vm_qemu" "microos-media" {
     cores   = 4
     sockets = 1
   }
-  memory = 4096
+  memory = 5024
 
   network {
     id      = 0
@@ -59,7 +59,7 @@ resource "proxmox_vm_qemu" "microos-media" {
     storage = "local-zfs"
     slot    = "virtio0"
     type    = "disk"
-    size    = "30G"
+    size    = "45G"
   }
 
   disk {

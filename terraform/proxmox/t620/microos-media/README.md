@@ -8,6 +8,9 @@ USB HDD passed through as `virtio1`, mounted as NTFS at `/var/mnt/external`. Dis
 
 If the disk is not connected during VM startup, remove virtio1 from VM using `qm`.
 
+## OPNSense
+Remember to set hostname and static mapping for this VM.
+
 ## cloud-init vendor-data
 
 [`cloud-init/vendor-data.yml`](cloud-init/vendor-data.yml) on first boot:

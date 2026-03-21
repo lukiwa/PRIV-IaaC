@@ -21,6 +21,9 @@ Usage:
 
 Note: `.terraform.lock.hcl` is created in [terraform/proxmox](.) and shared by all stacks in this root module.
 
+## OPNSense
+...
+
 ## User+Password vs Proxmox API Token
 
 This stack intentionally uses `pm_user` + `pm_password` (see [providers.tf](providers.tf)) instead of API token auth.
