@@ -1,0 +1,145 @@
+- name: Set stack local variables
+  ansible.builtin.set_fact:
+    stack_operation: "{{ stack.operation | default('update') }}"
+    stack_data_dir: "{{ stack.project_dir }}/data"
+    stack_plex_container_name: "{{ stack.plex_container_name | default('plex') }}"
+    stack_plex_preferences: "{{ stack.plex_preferences | default({}) }}"
+    stack_media_mount_root: "{{ stack.media_mount_root }}"
+    stack_plex_x_plex_token: "{{ stack.plex_x_plex_token | default('') }}"
+
+- name: Ensure stack project directory exists
+  ansible.builtin.file:
+    path: "{{ stack.project_dir }}"
+    state: directory
+    mode: "0755"
+  become: false
+
+- name: Stop stack containers before deploy
+  ansible.builtin.command: "podman-compose -f {{ stack.project_dir }}/{{ stack.compose_file_name }} down"
+  become: false
+  changed_when: true
+  failed_when: false
+  when: stack_operation == 'deploy'
+
+- name: Remove stack data directory before deploy
+  ansible.builtin.file:
+    path: "{{ stack_data_dir }}"
+    state: absent
+  become: false
+  when: stack_operation == 'deploy'
+
+- name: Remove stack compose file before deploy
+  ansible.builtin.file:
+    path: "{{ stack.project_dir }}/{{ stack.compose_file_name }}"
+    state: absent
+  become: false
+  when: stack_operation == 'deploy'
+
+- name: Ensure stack data directory exists
+  ansible.builtin.file:
+    path: "{{ stack_data_dir }}"
+    state: directory
+    mode: "0775"
+  become: false
+
+- name: Ensure Plex config directory exists
+  ansible.builtin.file:
+    path: "{{ stack_data_dir }}/{{ stack_plex_container_name }}"
+    state: directory
+    mode: "0775"
+  become: false
+
+- name: Ensure Plex preferences directory exists
+  ansible.builtin.file:
+    path: "{{ stack_data_dir }}/{{ stack_plex_container_name }}/Library/Application Support/Plex Media Server"
+    state: directory
+    mode: "0775"
+  become: false
+  when: stack_plex_preferences | length > 0
+
+- name: Resolve compose user UID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -u
+      - "{{ podman_compose_user }}"
+  register: podman_compose_uid_result
+  changed_when: false
+
+- name: Resolve compose user GID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -g
+      - "{{ podman_compose_user }}"
+  register: podman_compose_gid_result
+  changed_when: false
+
+- name: Ensure Plex token exists for deploy claim
+  ansible.builtin.assert:
+    that:
+      - stack_plex_x_plex_token | length > 0
+    fail_msg: "Set stack.plex_x_plex_token in host_vars to generate PLEX_CLAIM during deploy"
+  when: stack_operation == 'deploy'
+
+- name: Generate fresh Plex claim token
+  ansible.builtin.uri:
+    url: "https://plex.tv/api/claim/token?X-Plex-Token={{ stack_plex_x_plex_token }}"
+    method: GET
+    return_content: true
+  register: plex_claim_response
+  when: stack_operation == 'deploy'
+
+- name: Extract Plex claim token
+  ansible.builtin.set_fact:
+    plex_claim_token: "{{ plex_claim_response.content | regex_search('token=\"([^\"]+)\"', '\\1') | first }}"
+  when: stack_operation == 'deploy'
+
+- name: Render stack compose file
+  ansible.builtin.template:
+    src: "{{ stack.compose_template }}"
+    dest: "{{ stack.project_dir }}/{{ stack.compose_file_name }}"
+    mode: "0644"
+  register: podman_compose_file_result
+  become: false
+
+- name: Create Plex Preferences.xml
+  ansible.builtin.template:
+    src: "{{ stack.preferences_template }}"
+    dest: "{{ stack_data_dir }}/{{ stack_plex_container_name }}/Library/Application Support/Plex Media Server/Preferences.xml"
+    mode: "0644"
+  register: plex_preferences_result
+  become: false
+  when: stack_plex_preferences | length > 0
+
+- name: Update stack containers
+  ansible.builtin.command: "podman-compose -f {{ stack.project_dir }}/{{ stack.compose_file_name }} up -d"
+  register: podman_compose_up_result
+  become: false
+  changed_when: >-
+    'Creating' in podman_compose_up_result.stdout
+    or 'Recreating' in podman_compose_up_result.stdout
+    or 'Starting' in podman_compose_up_result.stdout
+    or podman_compose_file_result.changed
+    or (plex_preferences_result is defined and plex_preferences_result.changed)
+  when: stack_operation == 'update'
+
+- name: deploy stack containers
+  ansible.builtin.command: "podman-compose -f {{ stack.project_dir }}/{{ stack.compose_file_name }} up -d"
+  register: podman_compose_deploy_result
+  become: false
+  changed_when: true
+  when: stack_operation == 'deploy'
+
+# plex sometimes does not claim the server on first start, restarting the container is often needed
+- name: Wait before Plex restart after deploy
+  ansible.builtin.pause:
+    seconds: 60
+  when: stack_operation == 'deploy'
+
+- name: Restart Plex container after deploy
+  ansible.builtin.command: "podman restart {{ stack_plex_container_name }}"
+  register: plex_restart_result
+  become: false
+  changed_when: true
+  when: stack_operation == 'deploy'

@@ -6,8 +6,47 @@ packages:
 
 podman_compose_enabled: true
 podman_compose_user: "{{ ansible_user }}"
-podman_compose_project_dir: "/home/{{ podman_compose_user }}/podman-compose/media"
-podman_compose_file_name: compose.yaml
-podman_compose_data_dir: "{{ podman_compose_project_dir }}/data"
-plex_container_name: plex # used for automatic config directory creation and volume mapping in compose file
-media_mount_root: /var/mnt/external
+podman_compose_base_dir: "/home/{{ podman_compose_user }}/podman-compose"
+plex_x_plex_token: ""
+podman_compose_selected_stacks:
+  - media
+
+podman_compose_stacks:
+  - name: media
+    enabled: true
+    operation: deploy # update | deploy
+    project_dir: "{{ podman_compose_base_dir }}/media"
+    compose_file_name: compose.yaml
+    compose_template: stacks/media/compose.yaml.j2
+    preferences_template: stacks/media/Preferences.xml.j2
+    task_file: stacks/media.yaml
+    media_mount_root: /var/mnt/external
+    plex_container_name: plex
+    plex_x_plex_token: "{{ plex_x_plex_token }}"
+    plex_preferences:
+      MetricsEpoch: "1"
+      GlobalMusicVideoPathMigrated: "1"
+      AcceptedEULA: "1"
+      PublishServerOnPlexOnlineKey: "0"
+      DvrIncrementalEpgLoader: "0"
+      PubSubServerPing: "133"
+      CertificateVersion: "3"
+      LanguageInCloud: "1"
+      PubSubServer: "139.162.134.185"
+      PubSubServerRegion: "fra"
+      FSEventLibraryUpdatesEnabled: "1"
+      ScheduledLibraryUpdateInterval: "43200"
+      ScheduledLibraryUpdatesEnabled: "1"
+      IPNetworkType: "v4only"
+      RelayEnabled: "0"
+      LibraryVideoPlayedThreshold: "85"
+      sendCrashReports: "0"
+      LogVerbose: "1"
+      TranscoderQuality: "1"
+      TranscoderThrottleBuffer: "900"
+      OptimizerTranscodeCountLimit: "2"
+      _CPU-TranscodeCountLimit: "2"
+      DownloadsTempDirectory: ""
+      TranscoderTempDirectory: ""
+      LanNetworksBandwidth: "192.168.1.0/24,192.168.40.0/24,192.168.20.0/24,192.168.10.0/24"
+      allowedNetworks: "192.168.40.3"
