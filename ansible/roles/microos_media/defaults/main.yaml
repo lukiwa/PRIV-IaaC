@@ -1,28 +1,28 @@
 ---
-packages:
+microos_media_packages:
   - podman
   - podman-compose
   - tree
 
-podman_compose_enabled: true
-podman_compose_user: "{{ ansible_user }}"
-podman_compose_base_dir: "/var/podman-compose"
-plex_x_plex_token: ""
-podman_compose_selected_stacks:
+microos_media_podman_compose_enabled: true
+microos_media_podman_compose_user: "{{ ansible_user }}"
+microos_media_podman_compose_base_dir: "/var/podman-compose"
+microos_media_plex_x_plex_token: ""
+microos_media_podman_compose_selected_stacks:
   - media
 
-podman_compose_stacks:
+microos_media_podman_compose_stacks:
   - name: media
     enabled: true
     operation: deploy # update | deploy
-    project_dir: "{{ podman_compose_base_dir }}/media"
+    project_dir: "{{ microos_media_podman_compose_base_dir }}/media"
     compose_file_name: compose.yaml
     compose_template: stacks/media/compose.yaml.j2
     preferences_template: stacks/media/Preferences.xml.j2
     task_file: stacks/media.yaml
     media_mount_root: /var/mnt/external
     plex_container_name: plex
-    plex_x_plex_token: "{{ plex_x_plex_token }}"
+    plex_x_plex_token: "{{ microos_media_plex_x_plex_token }}"
     plex_preferences:
       MetricsEpoch: "1"
       GlobalMusicVideoPathMigrated: "1"

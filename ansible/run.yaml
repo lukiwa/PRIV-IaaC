@@ -1,5 +1,6 @@
 ---
-- hosts: all
+- name: Run microos_media role
+  hosts: all
   become: true
   roles:
-    - microos-media
+    - microos_media

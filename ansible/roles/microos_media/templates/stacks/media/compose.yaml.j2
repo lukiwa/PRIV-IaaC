@@ -1,0 +1,22 @@
+version: "2.1"
+
+networks:
+  media-network:
+    external: true
+
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: {{ microos_media_stack_plex_container_name }}
+    network_mode: host
+    userns_mode: keep-id
+    environment:
+{% if microos_media_stack_operation == 'deploy' and (microos_media_plex_claim_token is defined and microos_media_plex_claim_token | length > 0) %}
+      - PLEX_CLAIM={{ microos_media_plex_claim_token }}
+{% endif %}
+    volumes:
+      - {{ microos_media_stack_data_dir }}/{{ microos_media_stack_plex_container_name }}:/config:Z,U
+      - {{ microos_media_stack_media_mount_root }}/tv:/tv
+      - {{ microos_media_stack_media_mount_root }}/movies:/movies
+      - {{ microos_media_stack_media_mount_root }}/music:/music
+    restart: unless-stopped

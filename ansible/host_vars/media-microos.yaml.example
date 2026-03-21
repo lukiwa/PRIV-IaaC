@@ -4,4 +4,4 @@ ansible_host: "{{op://Private/Proxmox-T620-Media/ip}}"
 ansible_become_password: "{{op://Private/Proxmox-T620-Media/password}}"
 ansible_user: mediauser
 
-plex_x_plex_token: "{{op://Shared/Plex/X-Plex-Token}}"
+microos_media_plex_x_plex_token: "{{op://Shared/Plex/X-Plex-Token}}"

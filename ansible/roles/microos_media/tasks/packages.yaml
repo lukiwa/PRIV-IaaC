@@ -1,0 +1,37 @@
+- name: Update packages
+  ansible.builtin.command: transactional-update -n up
+  register: microos_media_transactional_update_result
+  changed_when: "'No update candidate found' not in microos_media_transactional_update_result.stdout"
+
+- name: Install packages
+  ansible.builtin.command: "transactional-update -n pkg install {{ microos_media_packages | join(' ') }}"
+  register: microos_media_transactional_install_result
+  changed_when: true
+  when:
+    - microos_media_packages is defined
+    - microos_media_packages | length > 0
+
+- name: Check if reboot is required after update
+  ansible.builtin.set_fact:
+    microos_media_reboot_required_update: >-
+      {{
+        ((microos_media_transactional_update_result.stdout | default(''))
+        ~ (microos_media_transactional_update_result.stderr | default('')))
+        is search('(?i)reboot')
+      }}
+
+- name: Check if reboot is required after package install
+  ansible.builtin.set_fact:
+    microos_media_reboot_required_install: >-
+      {{
+        microos_media_transactional_install_result is defined
+        and (((microos_media_transactional_install_result.stdout | default(''))
+        ~ (microos_media_transactional_install_result.stderr | default('')))
+        is search('(?i)reboot'))
+      }}
+
+- name: Reboot after transactional update
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after transactional-update"
+  when:
+    - microos_media_reboot_required_update or microos_media_reboot_required_install
