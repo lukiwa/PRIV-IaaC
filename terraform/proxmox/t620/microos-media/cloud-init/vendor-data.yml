@@ -7,6 +7,11 @@
 disable_root: true
 ssh_pwauth: false
 
+growpart:
+  mode: auto
+  devices:
+    - /dev/vda3
+
 bootcmd:
   - usermod -L root
 
@@ -46,4 +51,5 @@ write_files:
 runcmd:
   - usermod -aG wheel mediauser
   - /usr/local/sbin/setup-external-ntfs.sh
+  - btrfs filesystem resize max /var
   - systemctl restart sshd

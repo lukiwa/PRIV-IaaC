@@ -59,7 +59,7 @@ resource "proxmox_vm_qemu" "microos-media" {
     storage = "local-zfs"
     slot    = "virtio0"
     type    = "disk"
-    size    = "60G"
+    size    = "45G"
   }
 
   disk {
