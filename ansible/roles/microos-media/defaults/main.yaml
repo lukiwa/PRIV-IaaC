@@ -6,7 +6,7 @@ packages:
 
 podman_compose_enabled: true
 podman_compose_user: "{{ ansible_user }}"
-podman_compose_base_dir: "/home/{{ podman_compose_user }}/podman-compose"
+podman_compose_base_dir: "/var/podman-compose"
 plex_x_plex_token: ""
 podman_compose_selected_stacks:
   - media

@@ -12,7 +12,9 @@
     path: "{{ stack.project_dir }}"
     state: directory
     mode: "0755"
-  become: false
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
+  become: true
 
 - name: Stop stack containers before deploy
   ansible.builtin.command: "podman-compose -f {{ stack.project_dir }}/{{ stack.compose_file_name }} down"
@@ -25,14 +27,14 @@
   ansible.builtin.file:
     path: "{{ stack_data_dir }}"
     state: absent
-  become: false
+  become: true
   when: stack_operation == 'deploy'
 
 - name: Remove stack compose file before deploy
   ansible.builtin.file:
     path: "{{ stack.project_dir }}/{{ stack.compose_file_name }}"
     state: absent
-  become: false
+  become: true
   when: stack_operation == 'deploy'
 
 - name: Ensure stack data directory exists
@@ -40,21 +42,27 @@
     path: "{{ stack_data_dir }}"
     state: directory
     mode: "0775"
-  become: false
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
+  become: true
 
 - name: Ensure Plex config directory exists
   ansible.builtin.file:
     path: "{{ stack_data_dir }}/{{ stack_plex_container_name }}"
     state: directory
     mode: "0775"
-  become: false
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
+  become: true
 
 - name: Ensure Plex preferences directory exists
   ansible.builtin.file:
     path: "{{ stack_data_dir }}/{{ stack_plex_container_name }}/Library/Application Support/Plex Media Server"
     state: directory
     mode: "0775"
-  become: false
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
+  become: true
   when: stack_plex_preferences | length > 0
 
 - name: Resolve compose user UID
@@ -100,16 +108,20 @@
     src: "{{ stack.compose_template }}"
     dest: "{{ stack.project_dir }}/{{ stack.compose_file_name }}"
     mode: "0644"
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
   register: podman_compose_file_result
-  become: false
+  become: true
 
 - name: Create Plex Preferences.xml
   ansible.builtin.template:
     src: "{{ stack.preferences_template }}"
     dest: "{{ stack_data_dir }}/{{ stack_plex_container_name }}/Library/Application Support/Plex Media Server/Preferences.xml"
     mode: "0644"
+    owner: "{{ podman_compose_user }}"
+    group: "{{ podman_compose_user }}"
   register: plex_preferences_result
-  become: false
+  become: true
   when: stack_plex_preferences | length > 0
 
 - name: Update stack containers
