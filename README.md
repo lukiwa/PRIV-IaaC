@@ -1,5 +1,12 @@
 # PRIV-IaaC
 
+> [!WARNING]
+Documentation in this project is still under development and serves more like "notes to self".
+Some documentation parts were written by Copilot thus may be a bit misleading or not to the point :)
+
+> [!WARNING]
+Some parts of the project are tied to my Homelab environment (server names and hardware, 1Password paths, OPNsense configuration, HDD ids, etc.),
+
 Infrastructure as Code repository for personal environments.
 
 ## Installing and pre-configuring `proxmox`
@@ -42,10 +49,6 @@ asdf plugin add terraform
 asdf plugin add packer
 asdf install
 ```
-
-## Proxmox
-
-Packer and Proxmox build configuration is located in [packer/proxmox/](packer/proxmox/).
 
 ## License
 
