@@ -1,0 +1,32 @@
+- name: Update packages
+  ansible.builtin.command: transactional-update -n up
+  register: media_transactional_update_result
+  changed_when: "'No update candidate found' not in media_transactional_update_result.stdout"
+
+- name: Install packages
+  ansible.builtin.command: "transactional-update -n pkg install {{ media_packages | join(' ') }}"
+  register: media_transactional_install_result
+  changed_when: >-
+    (((media_transactional_install_result.stdout | default(''))
+    ~ (media_transactional_install_result.stderr | default('')))
+    is search('(?i)reboot'))
+  when:
+    - media_packages is defined
+    - media_packages | length > 0
+
+- name: Check if reboot is required
+  ansible.builtin.set_fact:
+    media_reboot_required: >-
+      {{
+        (((media_transactional_update_result.stdout | default(''))
+        ~ (media_transactional_update_result.stderr | default(''))
+        ~ (media_transactional_install_result.stdout | default(''))
+        ~ (media_transactional_install_result.stderr | default('')))
+        is search('(?i)reboot'))
+      }}
+
+- name: Reboot after transactional update
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after transactional-update"
+  when:
+    - media_reboot_required

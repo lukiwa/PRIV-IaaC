@@ -1,6 +1,0 @@
----
-- name: Include package tasks
-  ansible.builtin.include_tasks: packages.yaml
-
-- name: Include podman-compose tasks
-  ansible.builtin.include_tasks: podman-compose.yaml

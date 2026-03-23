@@ -1,26 +1,27 @@
-- name: Validate podman compose operation per stack
+- name: Validate quadlet operation per stack
   ansible.builtin.assert:
     that:
       - (stack.operation | default('update')) in ['update', 'deploy']
     fail_msg: "Stack '{{ stack.name }}' operation must be 'update' or 'deploy'"
   loop: >-
-    {{ microos_media_podman_compose_stacks
+    {{ media_quadlet_stacks
     | selectattr('enabled', 'equalto', true)
-    | selectattr('name', 'in', microos_media_podman_compose_selected_stacks)
+    | selectattr('name', 'in', media_quadlet_selected_stacks)
     | list }}
   loop_control:
     loop_var: stack
     label: "{{ stack.name }}"
-  when: microos_media_podman_compose_enabled | bool
+  when: media_quadlet_enabled | bool
+  no_log: true
 
-- name: Deploy enabled podman-compose stacks
+- name: Deploy enabled quadlet stacks
   ansible.builtin.include_tasks: "{{ stack.task_file }}"
   loop: >-
-    {{ microos_media_podman_compose_stacks
+    {{ media_quadlet_stacks
     | selectattr('enabled', 'equalto', true)
-    | selectattr('name', 'in', microos_media_podman_compose_selected_stacks)
+    | selectattr('name', 'in', media_quadlet_selected_stacks)
     | list }}
   loop_control:
     loop_var: stack
     label: "{{ stack.name }}"
-  when: microos_media_podman_compose_enabled | bool
+  when: media_quadlet_enabled | bool
