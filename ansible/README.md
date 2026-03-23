@@ -1,55 +1,59 @@
 # Ansible
 
-## MicroOS customization
+## Media VM customization
 
 Ansible is used for post-provision customization, including software installation.
 
-Current role behavior for `microos_media`:
+Current role behavior for `media`:
 
 - runs `transactional-update -n up`,
-- installs packages from `packages` (default: `podman`, `podman-compose`),
-- uses `podman-compose` as an aggregator for enabled stacks,
-- runs only stacks listed in `podman_compose_selected_stacks` (currently `media`),
+- installs packages from `media_packages` (default: `podman`, `tree`),
+- uses Podman Quadlet (`~/.config/containers/systemd/*.container`) for enabled stacks,
+- runs only stacks listed in `media_quadlet_selected_stacks` (currently `media`),
 - supports stack-level modes: `update` and `deploy`,
 - reboots only when update/install changed the system.
 
-Default package list is in [roles/microos_media/defaults/main.yaml](roles/microos_media/defaults/main.yaml).
+Default package list is in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
 
-By default, compose stacks are stored under: `/home/{{ ansible_user }}/podman-compose/<stack-name>`.
+By default, stack data is stored under: `/var/lib/media/stacks/<stack-name>`.
+Quadlet units are stored under: `/home/{{ ansible_user }}/.config/containers/systemd`.
 
 Media stack defaults:
 
-- config (bind mount): `/home/{{ ansible_user }}/podman-compose/media/data/{{ plex_container_name }}`
+- config (bind mount): `/var/lib/media/stacks/media/data/{{ plex_container_name }}`
 - media: `/var/mnt/external/{tv,movies,music}`
 
-Container config directories follow the convention: `/data/<container_name>` inside the compose project.
+Container config directories follow the convention: `/data/<container_name>` inside stack data dir.
 
 ### Operation modes
 
-- `podman_compose_operation: update`
-  - renders compose/preferences,
-  - runs `podman-compose up -d`.
+- `operation: update`
+  - renders Quadlet container unit,
+  - runs `systemctl --user enable --now container-<name>.service`.
 
-- `podman_compose_operation: deploy`
-  - generates fresh Plex claim token from `plex_x_plex_token`,
-  - injects `PLEX_CLAIM` into compose for this run,
-  - runs `podman-compose up -d --force-recreate`.
+- `operation: deploy`
+  - stops and disables unit,
+  - recreates stack data,
+  - generates fresh Plex claim token from `media_plex_x_plex_token`,
+  - injects `PLEX_CLAIM` into Quadlet unit for this run,
+  - enables and starts unit, then restarts it after short pause.
 
 ### Stacks
 
-Stacks are defined in `podman_compose_stacks` in [roles/microos_media/defaults/main.yaml](roles/microos_media/defaults/main.yaml).
-Each stack can point to its own task file and compose template.
+Stacks are defined in `media_quadlet_stacks` in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
+Each stack can point to its own task file and is rendered as Quadlet via `containers.podman.podman_container` (`state: quadlet`).
 Plex-specific actions (for example `Preferences.xml`) live in media stack tasks.
 
-To run only chosen stacks, set `podman_compose_selected_stacks`.
+To run only chosen stacks, set `media_quadlet_selected_stacks`.
 Current default:
 
 - `media`
 
 Stack templates layout:
 
-- compose: `roles/microos_media/templates/stacks/media/compose.yaml.j2`
-- preferences: `roles/microos_media/templates/stacks/media/Preferences.xml.j2`
+- preferences: `roles/media/templates/stacks/media/Preferences.xml.j2`
+
+## Usage
 
 1. Install required collections: `ansible-galaxy collection install -r requirements.yml`
 2. Fill host vars from example (preferably with 1Password).
