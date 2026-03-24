@@ -78,9 +78,7 @@
       mode: "0775"
     - path: "{{ media_stack_data_dir }}/{{ media_stack_plex_container_name }}"
       mode: "0775"
-    - path: >-
-        {{ media_stack_data_dir }}/{{ media_stack_plex_container_name }}
-        /Library/Application Support/Plex Media Server
+    - path: "{{ media_stack_data_dir }}/{{ media_stack_plex_container_name }}/Library/Application Support/Plex Media Server"
       mode: "0775"
       enabled: "{{ media_stack_plex_preferences | length > 0 }}"
   become: true
@@ -127,9 +125,7 @@
 - name: Create Plex Preferences file
   ansible.builtin.template:
     src: "{{ stack.preferences_template }}"
-    dest: >-
-      {{ media_stack_data_dir }}/{{ media_stack_plex_container_name }}
-      /Library/Application Support/Plex Media Server/Preferences.xml
+    dest: "{{ media_stack_data_dir }}/{{ media_stack_plex_container_name }}/Library/Application Support/Plex Media Server/Preferences.xml"
     mode: "0644"
     owner: "{{ media_quadlet_user }}"
     group: "{{ media_quadlet_user }}"
