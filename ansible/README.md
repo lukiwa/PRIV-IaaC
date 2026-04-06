@@ -7,91 +7,75 @@ Ansible is used for post-provision customization, including software installatio
 ### How it works
 
 - Installs packages from `media_packages` (default: `podman`, `tree`).
-- Orchestrates containers defined in `media_containers` (see [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml)).
-- Uses Podman Quadlet (`~/.config/containers/systemd/*.container`) for systemd-managed containers.
-- Supports two operation modes: `deploy` (full redeploy, data wipe, fresh secrets) and `update` (safe update, no data loss).
-- You can run all containers or only selected ones (see below).
-- You can run only packages, only containers, or both (using tags).
+- Orchestrates containers defined in `media_containers` (see [roles/media/vars/main.yaml](roles/media/vars/main.yaml)).
+- Uses Podman Quadlet for systemd-managed containers. User-scope containers use `~/.config/containers/systemd/`, system-scope (e.g. gluetun) use `/etc/containers/systemd/`.
+- Idempotent — safe to re-run at any time. Directories are created if missing, quadlet definitions are updated, services are restarted only when the definition changes.
+- Container-specific provisioning (e.g. Plex `Preferences.xml`) is only done on first run, unless `force_reprovision: true` is set in the container's `meta`.
 
 ### Declaring containers
 
-Containers are defined explicitly in `media_containers` in [roles/media/vars/main.yaml](roles/media/vars/main.yaml):
+Containers are defined in `media_containers` in [roles/media/vars/main.yaml](roles/media/vars/main.yaml):
 
 ```yaml
 media_containers:
-  - name: plex
-    task: containers/plex.yaml
-    config_dir: "{{ media_data_dir }}/plex"
-    restart_after_deploy: true
-    meta:
-      env: {}
-      x_plex_token: "{{ media_plex_x_plex_token }}"
-      preferences:
-        MetricsEpoch: "1"
-        # ... other preferences
-  # Add more containers here
+  - name: mycontainer
+    task: containers/mycontainer.yaml   # task file under roles/media/tasks/
+    config_dir: "{{ media_data_dir }}/mycontainer"
+    system_service: true                # optional, default: false (user scope)
+    network:                            # optional, default: [host]
+      - media-network
+    ports:                              # optional
+      - "8080:8080"
+    quadlet_options_extra:              # optional, appended to media_quadlet_options_main
+      - |
+        [Service]
+        TimeoutStartSec=120
+    meta:                               # container-specific config
+      env:
+        TZ: Europe/Berlin
 ```
 
-Each container has:
+Container fields:
 
-- `name`: container name
-- `task`: path to task file
-- `config_dir`: config directory
-- `restart_after_deploy`: whether to restart after deploy
-- `meta`: container-specific config (env vars, tokens, preferences)
+- `name` — container name
+- `task` — path to task file (relative to `roles/media/tasks/`)
+- `config_dir` — config directory on the host
+- `system_service` — set to `true` for root/system-scope containers (e.g. gluetun); defaults to user scope
+- `network` — list of Podman networks; use `host` or `container:<name>` for system containers
+- `ports` — port mappings (not needed when using host or container network)
+- `quadlet_options_extra` — additional quadlet `[Unit]`/`[Container]`/`[Service]` options
+- `meta` — container-specific data (env vars, tokens, etc.)
 
-To select which containers to deploy/update, set `media_containers_selected` (empty = all):
+To select which containers to run, set `media_containers_selected` (empty = all):
 
 ```yaml
-media_containers_selected: []  # or e.g. ["plex"]
+media_containers_selected: []  # or e.g. ["plex", "radarr"]
 ```
-
-### Operation modes
-
-- `media_operation: deploy` — full redeploy, stops and disables containers, wipes data, injects fresh secrets, restarts everything from scratch.
-- `media_operation: update` — only updates container definitions and restarts if needed, no data loss.
-
-Override on the command line:
-
-```bash
-ansible-playbook run.yaml -e 'media_operation=update'
-```
-
-Default: `deploy` (see defaults/main.yaml)
 
 ### Selective execution
 
-You can selectively run only chosen parts of the media role using tags and the `media_containers_selected` variable.
-
-**1. Only install packages:**
-
 ```bash
+# Only packages
 ansible-playbook run.yaml --tags packages
-```
 
-**2. Only containers (all selected in `media_containers_selected`):**
-
-```bash
+# All containers
 ansible-playbook run.yaml --tags containers
+
+# Selected containers
+ansible-playbook run.yaml --tags containers -e '{"media_containers_selected": ["plex"]}'
+
+# Everything (default)
+ansible-playbook run.yaml
 ```
 
-**3. Only selected containers (e.g., only Plex):**
-
-```bash
-ansible-playbook run.yaml --tags containers -e 'media_containers_selected=["plex"]'
-```
-
-**4. Only selected containers (e.g., Plex and Radarr):**
-
-```bash
-ansible-playbook run.yaml --tags containers -e 'media_containers_selected=["plex","radarr"]'
-```
-
-**5. Everything (default, no tags):**
+**6. Everything (default, no tags):**
 
 ```bash
 ansible-playbook run.yaml
 ```
+
+> [!NOTE]
+> Always use JSON format (`-e '{"key": value}'`) when passing lists or booleans. The `key=value` shorthand always passes a string, which breaks list variables like `media_containers_selected`.
 
 ### Usage
 
@@ -99,10 +83,11 @@ ansible-playbook run.yaml
 2. Fill host vars from example (preferably with 1Password).
 3. Execute playbook: `ansible-playbook run.yaml`
 
-### Plex Claim
+### Plex
 
-- Plex requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
-- The token is injected automatically during `deploy` via `meta.x_plex_token`.
+Plex requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
+
+To force re-generation of `Preferences.xml`, set `force_reprovision: true` in the Plex container `meta` in `vars/main.yaml`, run the playbook, then revert the flag.
 
 ### Notes
 

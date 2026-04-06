@@ -1,6 +1,5 @@
 ---
 media_quadlet_auto_update: true
-media_operation: update # update | deploy
 media_project_dir: /var/lib/media
 media_data_dir: "{{ media_project_dir }}/data"
 media_mount_root: /var/mnt/external

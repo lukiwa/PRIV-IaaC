@@ -4,9 +4,9 @@ media_containers:
   - name: plex
     task: containers/plex.yaml
     config_dir: "{{ media_data_dir }}/plex"
-    restart_after_deploy: true
     meta:
       env: {}
+      force_reprovision: false
       x_plex_token: "{{ media_plex_x_plex_token }}"
       preferences:
         MetricsEpoch: "1"
@@ -35,6 +35,106 @@ media_containers:
         TranscoderTempDirectory: ""
         LanNetworksBandwidth: "192.168.1.0/24,192.168.40.0/24,192.168.20.0/24,192.168.10.0/24"
         allowedNetworks: "192.168.40.3"
+  - name: radarr
+    task: containers/radarr.yaml
+    config_dir: "{{ media_data_dir }}/radarr"
+    network:
+      - media-network
+    ports:
+      - "7878:7878"
+    meta:
+      env:
+        TZ: "Europe/Warsaw"
+  - name: sonarr
+    task: containers/sonarr.yaml
+    config_dir: "{{ media_data_dir }}/sonarr"
+    network:
+      - media-network
+    ports:
+      - "8989:8989"
+    meta:
+      env:
+        TZ: "Europe/Warsaw"
+  - name: prowlarr
+    task: containers/prowlarr.yaml
+    config_dir: "{{ media_data_dir }}/prowlarr"
+    network:
+      - media-network
+    ports:
+      - "9696:9696"
+    meta:
+      env:
+        TZ: "Europe/Warsaw"
+  - name: flaresolverr
+    task: containers/flaresolverr.yaml
+    config_dir: "{{ media_data_dir }}/flaresolverr"
+    network:
+      - media-network
+    ports:
+      - "8191:8191"
+    quadlet_options_extra:
+      - |
+        [Service]
+        TimeoutStartSec=300
+    meta:
+      env:
+        TZ: "Europe/Warsaw"
+        LOG_LEVEL: "info"
+        LOG_HTML: "false"
+        CAPTCHA_SOLVER: "none"
+  - name: gluetun
+    task: containers/gluetun.yaml
+    system_service: true
+    config_dir: "{{ media_data_dir }}/gluetun"
+    network:
+      - host
+    quadlet_options_extra:
+      - |
+        [Container]
+        HealthCmd=CMD-SHELL /gluetun-entrypoint healthcheck
+        HealthInterval=30s
+        HealthRetries=3
+        HealthStartPeriod=20s
+        HealthTimeout=5s
+        HealthOnFailure=kill
+      - |
+        [Service]
+        TimeoutStartSec=300
+        Restart=on-failure
+    meta:
+      env:
+        VPN_SERVICE_PROVIDER: "{{ media_gluetun_vpn_service_provider }}"
+        VPN_TYPE: "{{ media_gluetun_vpn_type }}"
+        WIREGUARD_PRIVATE_KEY: "{{ media_gluetun_wireguard_private_key }}"
+        WIREGUARD_ADDRESSES: "{{ media_gluetun_wireguard_addresses }}"
+        SERVER_CITIES: "{{ media_gluetun_server_cities }}"
+  - name: qbittorrent
+    task: containers/qbittorrent.yaml
+    system_service: true
+    config_dir: "{{ media_data_dir }}/qbittorrent"
+    quadlet_options_extra:
+      - |
+        [Unit]
+        Requires=gluetun.service
+        After=gluetun.service
+    meta:
+      env:
+        TZ: Europe/Warsaw
+        WEBUI_PORT: "8182"
+  - name: bazarr
+    task: containers/bazarr.yaml
+    config_dir: "{{ media_data_dir }}/bazarr"
+    network:
+      - media-network
+    ports:
+      - "6767:6767"
+    quadlet_options_extra:
+      - |
+        [Service]
+        TimeoutStartSec=300
+    meta:
+      env:
+        TZ: Europe/Warsaw
 
-#containers to deploy/update (empty = all):
+# containers to deploy/update (empty = all):
 media_containers_selected: []

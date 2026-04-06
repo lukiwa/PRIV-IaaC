@@ -1,0 +1,21 @@
+---
+- name: Create or update Prowlarr Quadlet definition
+  containers.podman.podman_container:
+    name: "{{ item.name }}"
+    image: lscr.io/linuxserver/prowlarr:latest
+    state: quadlet
+    quadlet_dir: "{{ media_quadlet_user_dir }}"
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0644"
+    network: "{{ item.network | default(['host']) }}"
+    ports: "{{ item.ports | default([]) }}"
+    userns: keep-id
+    volume:
+      - "{{ item.config_dir }}:/config:Z,U"
+    env: "{{ item.meta.env }}"
+    quadlet_options: "{{ media_quadlet_options_main + (item.quadlet_options_extra | default([])) }}"
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+  notify: Reload systemd user daemon

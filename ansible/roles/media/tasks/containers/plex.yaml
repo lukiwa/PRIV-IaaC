@@ -1,5 +1,19 @@
 ---
-- name: Create Plex preferences directory for deploy
+- name: Check if Plex Preferences.xml already exists
+  ansible.builtin.stat:
+    path: "{{ item.config_dir }}/Library/Application Support/Plex Media Server/Preferences.xml"
+  register: media_plex_preferences_stat
+  become: true
+
+- name: Set Plex provision flag
+  ansible.builtin.set_fact:
+    media_plex_needs_provision: >-
+      {{
+        (not media_plex_preferences_stat.stat.exists)
+        or (item.meta.force_reprovision | default(false))
+      }}
+
+- name: Create Plex preferences directory
   ansible.builtin.file:
     path: "{{ item.config_dir }}/Library/Application Support/Plex Media Server"
     state: directory
@@ -8,16 +22,15 @@
     group: "{{ ansible_user }}"
   become: true
   when:
-    - media_operation == 'deploy'
+    - media_plex_needs_provision
     - item.meta.preferences | length > 0
 
-- name: Check Plex token exists for deploy claim
+- name: Check Plex token exists for claim
   ansible.builtin.assert:
     that:
       - (item.meta.x_plex_token | default('')) | length > 0
-    fail_msg: "Set x_plex_token in meta for {{ item.name }} in host_vars to generate PLEX_CLAIM during deploy"
-  when:
-    - media_operation == 'deploy'
+    fail_msg: "Set x_plex_token in meta for {{ item.name }} in host_vars to generate PLEX_CLAIM"
+  when: media_plex_needs_provision
   no_log: true
 
 - name: Generate fresh Plex claim token
@@ -27,7 +40,7 @@
     return_content: true
   register: media_plex_claim_response
   when:
-    - media_operation == 'deploy'
+    - media_plex_needs_provision
     - media_plex_claim_token is not defined or media_plex_claim_token | length == 0
   no_log: true
 
@@ -39,8 +52,7 @@
         | regex_findall('token="([^"]+)"') | first)
         | default(media_plex_claim_token | default(''))
       }}
-  when:
-    - media_operation == 'deploy'
+  when: media_plex_needs_provision
   no_log: true
 
 - name: Validate extracted Plex claim token
@@ -48,8 +60,7 @@
     that:
       - media_plex_claim_token | length > 0
     fail_msg: "Failed to get PLEX_CLAIM from Plex API. Check media_plex_x_plex_token."
-  when:
-    - media_operation == 'deploy'
+  when: media_plex_needs_provision
   no_log: true
 
 - name: Create Plex Preferences file
@@ -61,8 +72,13 @@
     group: "{{ ansible_user }}"
   become: true
   when:
+    - media_plex_needs_provision
     - item.meta.preferences | length > 0
-    - media_operation == 'deploy'
+
+- name: Register Plex for restart after fresh provision
+  ansible.builtin.set_fact:
+    media_containers_to_restart: "{{ media_containers_to_restart + [item.name] }}"
+  when: media_plex_needs_provision
 
 - name: Initialize Plex environment
   ansible.builtin.set_fact:
@@ -92,7 +108,7 @@
       - "{{ media_mount_root }}/movies:/movies"
       - "{{ media_mount_root }}/music:/music"
     env: "{{ media_plex_env }}"
-    quadlet_options: "{{ media_quadlet_options_main }}"
+    quadlet_options: "{{ media_quadlet_options_main + (item.quadlet_options_extra | default([])) }}"
   become: true
   become_user: "{{ ansible_user }}"
   environment:
