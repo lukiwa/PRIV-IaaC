@@ -2,71 +2,108 @@
 
 ## Media VM customization
 
-Ansible is used for post-provision customization, including software installation.
+Ansible is used for post-provision customization, including software installation and container orchestration.
 
-Current role behavior for `media`:
+### How it works
 
-- runs `transactional-update -n up`,
-- installs packages from `media_packages` (default: `podman`, `tree`),
-- uses Podman Quadlet (`~/.config/containers/systemd/*.container`) for enabled stacks,
-- runs only stacks listed in `media_quadlet_selected_stacks` (currently `media`),
-- supports stack-level modes: `update` and `deploy`,
-- reboots only when update/install changed the system.
+- Installs packages from `media_packages` (default: `podman`, `tree`).
+- Orchestrates containers defined in `media_containers` (see [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml)).
+- Uses Podman Quadlet (`~/.config/containers/systemd/*.container`) for systemd-managed containers.
+- Supports two operation modes: `deploy` (full redeploy, data wipe, fresh secrets) and `update` (safe update, no data loss).
+- You can run all containers or only selected ones (see below).
+- You can run only packages, only containers, or both (using tags).
 
-Default package list is in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
+### Declaring containers
 
-By default, stack data is stored under: `/var/lib/media/stacks/<stack-name>`.
-Quadlet units are stored under: `/home/{{ ansible_user }}/.config/containers/systemd`.
+Containers are defined explicitly in `media_containers` in [roles/media/vars/main.yaml](roles/media/vars/main.yaml):
 
-Media stack defaults:
+```yaml
+media_containers:
+  - name: plex
+    task: containers/plex.yaml
+    config_dir: "{{ media_data_dir }}/plex"
+    restart_after_deploy: true
+    meta:
+      env: {}
+      x_plex_token: "{{ media_plex_x_plex_token }}"
+      preferences:
+        MetricsEpoch: "1"
+        # ... other preferences
+  # Add more containers here
+```
 
-- config (bind mount): `/var/lib/media/stacks/media/data/{{ plex_container_name }}`
-- media: `/var/mnt/external/{tv,movies,music}`
+Each container has:
 
-Container config directories follow the convention: `/data/<container_name>` inside stack data dir.
+- `name`: container name
+- `task`: path to task file
+- `config_dir`: config directory
+- `restart_after_deploy`: whether to restart after deploy
+- `meta`: container-specific config (env vars, tokens, preferences)
+
+To select which containers to deploy/update, set `media_containers_selected` (empty = all):
+
+```yaml
+media_containers_selected: []  # or e.g. ["plex"]
+```
 
 ### Operation modes
 
-- `operation: update`
-  - renders Quadlet container unit,
-  - runs `systemctl --user enable --now container-<name>.service`.
+- `media_operation: deploy` — full redeploy, stops and disables containers, wipes data, injects fresh secrets, restarts everything from scratch.
+- `media_operation: update` — only updates container definitions and restarts if needed, no data loss.
 
-- `operation: deploy`
-  - stops and disables unit,
-  - recreates stack data,
-  - generates fresh Plex claim token from `media_plex_x_plex_token`,
-  - injects `PLEX_CLAIM` into Quadlet unit for this run,
-  - enables and starts unit, then restarts it after short pause.
+Override on the command line:
 
-### Stacks
+```bash
+ansible-playbook run.yaml -e 'media_operation=update'
+```
 
-Stacks are defined in `media_quadlet_stacks` in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
-Each stack can point to its own task file and is rendered as Quadlet via `containers.podman.podman_container` (`state: quadlet`).
-Plex-specific actions (for example `Preferences.xml`) live in media stack tasks.
+Default: `deploy` (see defaults/main.yaml)
 
-To run only chosen stacks, set `media_quadlet_selected_stacks`.
-Current default:
+### Selective execution
 
-- `media`
+You can selectively run only chosen parts of the media role using tags and the `media_containers_selected` variable.
 
-Stack templates layout:
+**1. Only install packages:**
 
-- preferences: `roles/media/templates/stacks/media/Preferences.xml.j2`
+```bash
+ansible-playbook run.yaml --tags packages
+```
 
-## Usage
+**2. Only containers (all selected in `media_containers_selected`):**
+
+```bash
+ansible-playbook run.yaml --tags containers
+```
+
+**3. Only selected containers (e.g., only Plex):**
+
+```bash
+ansible-playbook run.yaml --tags containers -e 'media_containers_selected=["plex"]'
+```
+
+**4. Only selected containers (e.g., Plex and Radarr):**
+
+```bash
+ansible-playbook run.yaml --tags containers -e 'media_containers_selected=["plex","radarr"]'
+```
+
+**5. Everything (default, no tags):**
+
+```bash
+ansible-playbook run.yaml
+```
+
+### Usage
 
 1. Install required collections: `ansible-galaxy collection install -r requirements.yml`
 2. Fill host vars from example (preferably with 1Password).
 3. Execute playbook: `ansible-playbook run.yaml`
 
-## Plex Claim
+### Plex Claim
 
-1. Plex is known to be fussy when it comes to claiming server from different VLAN. This is a case in this setup,
-2. Thus, `PLEX_CLAIM` env var should be passed to a container before first start
-3. This `PLEX_CLAIM` is using: `curl -X GET https://plex.tv/api/claim/token\?\&X-Plex-Token\=\{$(op read op://Shared/Plex/X-Plex-Token)\}`
-4. X-Plex-Token is stored in 1Password and can be obtained: <https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/>
-5. PLEX_CLAIM is valid for 4m,
+- Plex requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
+- The token is injected automatically during `deploy` via `meta.x_plex_token`.
 
-## Notes
+### Notes
 
-When repovisioning VM, remember to delete old entries from `known_hosts` login for the first time to add key to known host and try using sudo.
+When reprovisioning VM, remember to delete old entries from `known_hosts` and use sudo for first login if needed.

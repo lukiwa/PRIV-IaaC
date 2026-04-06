@@ -1,0 +1,140 @@
+- name: Validate media operation
+  ansible.builtin.assert:
+    that:
+      - media_operation in ['update', 'deploy']
+    fail_msg: "media_operation must be 'update' or 'deploy'"
+
+- name: Resolve quadlet user UID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -u
+      - "{{ ansible_user }}"
+  register: media_quadlet_uid_result
+  changed_when: false
+
+- name: Set quadlet variables
+  ansible.builtin.set_fact:
+    media_quadlet_user_dir: "/home/{{ ansible_user }}/.config/containers/systemd"
+    media_quadlet_runtime_dir: "/run/user/{{ media_quadlet_uid_result.stdout }}"
+
+- name: Create required media directories
+  ansible.builtin.file:
+    path: "{{ media_dir_item.path }}"
+    state: directory
+    mode: "{{ media_dir_item.mode }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop:
+    - path: "{{ media_project_dir }}"
+      mode: "0755"
+    - path: "{{ media_data_dir }}"
+      mode: "0775"
+    - path: "{{ media_quadlet_user_dir }}"
+      mode: "0755"
+  loop_control:
+    loop_var: media_dir_item
+  become: true
+  when: media_operation == 'deploy'
+
+- name: Enable systemd linger for quadlet user
+  ansible.builtin.command: "loginctl enable-linger {{ ansible_user }}"
+  become: true
+  changed_when: false
+
+- name: Select containers to deploy
+  ansible.builtin.set_fact:
+    media_containers_selected: >-
+      {{
+        media_containers
+        if (media_containers_selected | length == 0)
+        else (media_containers | selectattr('name', 'in', media_containers_selected) | list)
+      }}
+
+- name: Assert at least one container selected
+  ansible.builtin.assert:
+    that:
+      - media_containers_selected | length > 0
+    fail_msg: "No containers selected for deploy/update. Check media_containers_selected."
+
+- name: Create container config directories
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}"
+    state: directory
+    mode: "0775"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop: "{{ media_containers_selected }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become: true
+  when: media_operation == 'deploy'
+
+- name: Stop container services before deploy
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}.service"
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+  failed_when: false
+  loop: "{{ media_containers_selected }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - media_operation == 'deploy'
+
+- name: Include container task files
+  ansible.builtin.include_tasks: "{{ item.task }}"
+  loop: "{{ media_containers_selected }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Notify systemd reload
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start container services
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}.service"
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+  loop: "{{ media_containers_selected }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Wait before container restarts after deploy
+  ansible.builtin.pause:
+    seconds: 60
+  when:
+    - media_operation == 'deploy'
+    - (media_containers_selected | selectattr('restart_after_deploy', 'equalto', true) | list | length) > 0
+
+- name: Restart selected container services after deploy
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}.service"
+    state: restarted
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+  changed_when: true
+  loop: "{{ media_containers_selected }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - media_operation == 'deploy'
+    - item.restart_after_deploy | default(false)
+
+- name: Notify auto-update timer enable
+  ansible.builtin.command: /bin/true
+  notify: Enable podman auto-update timer
+  when: media_quadlet_auto_update

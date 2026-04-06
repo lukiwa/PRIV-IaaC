@@ -1,0 +1,100 @@
+---
+- name: Create Plex preferences directory for deploy
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}/Library/Application Support/Plex Media Server"
+    state: directory
+    mode: "0775"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+  when:
+    - media_operation == 'deploy'
+    - item.meta.preferences | length > 0
+
+- name: Check Plex token exists for deploy claim
+  ansible.builtin.assert:
+    that:
+      - (item.meta.x_plex_token | default('')) | length > 0
+    fail_msg: "Set x_plex_token in meta for {{ item.name }} in host_vars to generate PLEX_CLAIM during deploy"
+  when:
+    - media_operation == 'deploy'
+  no_log: true
+
+- name: Generate fresh Plex claim token
+  ansible.builtin.uri:
+    url: "https://plex.tv/api/claim/token?X-Plex-Token={{ item.meta.x_plex_token | default('') }}"
+    method: GET
+    return_content: true
+  register: media_plex_claim_response
+  when:
+    - media_operation == 'deploy'
+    - media_plex_claim_token is not defined or media_plex_claim_token | length == 0
+  no_log: true
+
+- name: Extract Plex claim token
+  ansible.builtin.set_fact:
+    media_plex_claim_token: >-
+      {{
+        (media_plex_claim_response.content | default('')
+        | regex_findall('token="([^"]+)"') | first)
+        | default(media_plex_claim_token | default(''))
+      }}
+  when:
+    - media_operation == 'deploy'
+  no_log: true
+
+- name: Validate extracted Plex claim token
+  ansible.builtin.assert:
+    that:
+      - media_plex_claim_token | length > 0
+    fail_msg: "Failed to get PLEX_CLAIM from Plex API. Check media_plex_x_plex_token."
+  when:
+    - media_operation == 'deploy'
+  no_log: true
+
+- name: Create Plex Preferences file
+  ansible.builtin.template:
+    src: containers/plex/Preferences.xml.j2
+    dest: "{{ item.config_dir }}/Library/Application Support/Plex Media Server/Preferences.xml"
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+  when:
+    - item.meta.preferences | length > 0
+    - media_operation == 'deploy'
+
+- name: Initialize Plex environment
+  ansible.builtin.set_fact:
+    media_plex_env: "{{ item.meta.env }}"
+
+- name: Add Plex claim to environment
+  ansible.builtin.set_fact:
+    media_plex_env: "{{ media_plex_env | combine({'PLEX_CLAIM': media_plex_claim_token}) }}"
+  when:
+    - media_plex_claim_token is defined
+    - media_plex_claim_token | length > 0
+
+- name: Create or update Plex Quadlet definition
+  containers.podman.podman_container:
+    name: "{{ item.name }}"
+    image: lscr.io/linuxserver/plex:latest
+    state: quadlet
+    quadlet_dir: "{{ media_quadlet_user_dir }}"
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0644"
+    network:
+      - host
+    userns: keep-id
+    volume:
+      - "{{ item.config_dir }}:/config:Z,U"
+      - "{{ media_mount_root }}/tv:/tv"
+      - "{{ media_mount_root }}/movies:/movies"
+      - "{{ media_mount_root }}/music:/music"
+    env: "{{ media_plex_env }}"
+    quadlet_options: "{{ media_quadlet_options_main }}"
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+  notify: Reload systemd user daemon

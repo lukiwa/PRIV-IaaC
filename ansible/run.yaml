@@ -1,6 +1,9 @@
 ---
-- name: Run media role
+- name: Run packages and media roles
   hosts: all
   become: true
   roles:
-    - media
+    - role: packages
+      tags: packages
+    - role: media
+      tags: media

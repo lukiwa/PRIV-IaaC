@@ -1,0 +1,40 @@
+---
+# Container-specific variables
+media_containers:
+  - name: plex
+    task: containers/plex.yaml
+    config_dir: "{{ media_data_dir }}/plex"
+    restart_after_deploy: true
+    meta:
+      env: {}
+      x_plex_token: "{{ media_plex_x_plex_token }}"
+      preferences:
+        MetricsEpoch: "1"
+        GlobalMusicVideoPathMigrated: "1"
+        AcceptedEULA: "1"
+        PublishServerOnPlexOnlineKey: "0"
+        DvrIncrementalEpgLoader: "0"
+        PubSubServerPing: "133"
+        CertificateVersion: "3"
+        LanguageInCloud: "1"
+        PubSubServer: "139.162.134.185"
+        PubSubServerRegion: "fra"
+        FSEventLibraryUpdatesEnabled: "1"
+        ScheduledLibraryUpdateInterval: "43200"
+        ScheduledLibraryUpdatesEnabled: "1"
+        IPNetworkType: "v4only"
+        RelayEnabled: "0"
+        LibraryVideoPlayedThreshold: "85"
+        sendCrashReports: "0"
+        LogVerbose: "1"
+        TranscoderQuality: "1"
+        TranscoderThrottleBuffer: "900"
+        OptimizerTranscodeCountLimit: "2"
+        _CPU-TranscodeCountLimit: "2"
+        DownloadsTempDirectory: ""
+        TranscoderTempDirectory: ""
+        LanNetworksBandwidth: "192.168.1.0/24,192.168.40.0/24,192.168.20.0/24,192.168.10.0/24"
+        allowedNetworks: "192.168.40.3"
+
+#containers to deploy/update (empty = all):
+media_containers_selected: []
