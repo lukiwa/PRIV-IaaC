@@ -1,13 +1,11 @@
 name: Ansible Lint
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'ansible/**'
   pull_request:
     paths:
-      - 'ansible/**'
+      - ansible/**
+      - .github/workflows/ci-ansible.yml
+  workflow_dispatch:
 
 jobs:
   lint:
