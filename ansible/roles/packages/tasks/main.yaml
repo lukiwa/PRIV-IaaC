@@ -2,6 +2,7 @@
   ansible.builtin.command: transactional-update -n up
   register: packages_transactional_update_result
   changed_when: "'No update candidate found' not in packages_transactional_update_result.stdout"
+  poll: 15
 
 - name: Install packages
   ansible.builtin.command: "transactional-update -n pkg install {{ packages_list | join(' ') }}"
@@ -10,6 +11,7 @@
     (((packages_transactional_install_result.stdout | default(''))
     ~ (packages_transactional_install_result.stderr | default('')))
     is search('(?i)reboot'))
+  poll: 15
   when:
     - packages_list is defined
     - packages_list | length > 0
