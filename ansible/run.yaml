@@ -1,5 +1,5 @@
 ---
-- name: media
+- name: Media
   hosts: media
   become: true
   roles:
@@ -8,7 +8,7 @@
     - role: media
       tags: media
 
-- name: infra
+- name: Infra
   hosts: infra
   become: true
   roles:
