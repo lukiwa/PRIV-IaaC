@@ -114,6 +114,7 @@ resource "terraform_data" "attach_external_disk" {
   triggers_replace = [
     proxmox_vm_qemu.this.vmid,
     local.external_disk_path,
+    timestamp(),
   ]
 
   depends_on = [proxmox_vm_qemu.this]
