@@ -47,10 +47,10 @@ inputs = {
   cloud_init_snippet_name     = "microos-infra-vendor"
   cloud_init_storage          = "local"
 
-  ipconfig0  = "ip=dhcp"
-  ciuser     = "infrauser"
-  cipassword = include.vm_secrets.locals.password
-  sshkeys    = include.vm_secrets.locals.public_key
-  ciupgrade  = true
-  force_create       = false
+  ipconfig0    = "ip=dhcp"
+  ciuser       = "infrauser"
+  cipassword   = include.vm_secrets.locals.password
+  sshkeys      = include.vm_secrets.locals.public_key
+  ciupgrade    = true
+  force_create = false
 }
