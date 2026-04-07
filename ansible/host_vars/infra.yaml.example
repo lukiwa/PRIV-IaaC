@@ -1,0 +1,5 @@
+# op inject -i infra.yaml.example -o infra.yaml
+---
+ansible_host: "{{op://Private/Proxmox-T620-Infra/ip}}"
+ansible_become_password: "{{op://Private/Proxmox-T620-Infra/password}}"
+ansible_user: "{{op://Private/Proxmox-T620-Infra/user}}"
