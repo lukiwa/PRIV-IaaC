@@ -2,6 +2,12 @@
 ---
 ansible_host: "{{op://Private/Proxmox-T620-Media/ip}}"
 ansible_become_password: "{{op://Private/Proxmox-T620-Media/password}}"
-ansible_user: mediauser
+ansible_user: "{{op://Private/Proxmox-T620-Media/user}}"
 
 media_plex_x_plex_token: "{{op://Shared/Plex/X-Plex-Token}}"
+
+media_gluetun_wireguard_private_key: "{{op://Private/Mullvad-VPN/wireguard-private-key}}"
+media_gluetun_wireguard_addresses: "{{op://Private/Mullvad-VPN/wireguard-addresses}}"
+media_gluetun_server_cities: "{{op://Private/Mullvad-VPN/server-cities}}"
+media_gluetun_vpn_service_provider: "mullvad"
+media_gluetun_vpn_type: "wireguard"

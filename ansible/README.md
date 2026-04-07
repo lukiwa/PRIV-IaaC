@@ -2,71 +2,93 @@
 
 ## Media VM customization
 
-Ansible is used for post-provision customization, including software installation.
+Ansible is used for post-provision customization, including software installation and container orchestration.
 
-Current role behavior for `media`:
+### How it works
 
-- runs `transactional-update -n up`,
-- installs packages from `media_packages` (default: `podman`, `tree`),
-- uses Podman Quadlet (`~/.config/containers/systemd/*.container`) for enabled stacks,
-- runs only stacks listed in `media_quadlet_selected_stacks` (currently `media`),
-- supports stack-level modes: `update` and `deploy`,
-- reboots only when update/install changed the system.
+- Installs packages from `media_packages` (default: `podman`, `tree`).
+- Orchestrates containers defined in `media_containers` (see [roles/media/vars/main.yaml](roles/media/vars/main.yaml)).
+- Uses Podman Quadlet for systemd-managed containers. User-scope containers use `~/.config/containers/systemd/`, system-scope (e.g. gluetun) use `/etc/containers/systemd/`.
+- Idempotent — safe to re-run at any time. Directories are created if missing, quadlet definitions are updated, services are restarted only when the definition changes.
+- Container-specific provisioning (e.g. Plex `Preferences.xml`) is only done on first run, unless `force_reprovision: true` is set in the container's `meta`.
 
-Default package list is in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
+### Declaring containers
 
-By default, stack data is stored under: `/var/lib/media/stacks/<stack-name>`.
-Quadlet units are stored under: `/home/{{ ansible_user }}/.config/containers/systemd`.
+Containers are defined in `media_containers` in [roles/media/vars/main.yaml](roles/media/vars/main.yaml):
 
-Media stack defaults:
+```yaml
+media_containers:
+  - name: mycontainer
+    task: containers/mycontainer.yaml   # task file under roles/media/tasks/
+    config_dir: "{{ media_data_dir }}/mycontainer"
+    system_service: true                # optional, default: false (user scope)
+    network:                            # optional, default: [host]
+      - media-network
+    ports:                              # optional
+      - "8080:8080"
+    quadlet_options_extra:              # optional, appended to media_quadlet_options_main
+      - |
+        [Service]
+        TimeoutStartSec=120
+    meta:                               # container-specific config
+      env:
+        TZ: Europe/Berlin
+```
 
-- config (bind mount): `/var/lib/media/stacks/media/data/{{ plex_container_name }}`
-- media: `/var/mnt/external/{tv,movies,music}`
+Container fields:
 
-Container config directories follow the convention: `/data/<container_name>` inside stack data dir.
+- `name` — container name
+- `task` — path to task file (relative to `roles/media/tasks/`)
+- `config_dir` — config directory on the host
+- `system_service` — set to `true` for root/system-scope containers (e.g. gluetun); defaults to user scope
+- `network` — list of Podman networks; use `host` or `container:<name>` for system containers
+- `ports` — port mappings (not needed when using host or container network)
+- `quadlet_options_extra` — additional quadlet `[Unit]`/`[Container]`/`[Service]` options
+- `meta` — container-specific data (env vars, tokens, etc.)
 
-### Operation modes
+To select which containers to run, set `media_containers_selected` (empty = all):
 
-- `operation: update`
-  - renders Quadlet container unit,
-  - runs `systemctl --user enable --now container-<name>.service`.
+```yaml
+media_containers_selected: []  # or e.g. ["plex", "radarr"]
+```
 
-- `operation: deploy`
-  - stops and disables unit,
-  - recreates stack data,
-  - generates fresh Plex claim token from `media_plex_x_plex_token`,
-  - injects `PLEX_CLAIM` into Quadlet unit for this run,
-  - enables and starts unit, then restarts it after short pause.
+### Selective execution
 
-### Stacks
+```bash
+# Only packages
+ansible-playbook run.yaml --tags packages
 
-Stacks are defined in `media_quadlet_stacks` in [roles/media/defaults/main.yaml](roles/media/defaults/main.yaml).
-Each stack can point to its own task file and is rendered as Quadlet via `containers.podman.podman_container` (`state: quadlet`).
-Plex-specific actions (for example `Preferences.xml`) live in media stack tasks.
+# All containers
+ansible-playbook run.yaml --tags containers
 
-To run only chosen stacks, set `media_quadlet_selected_stacks`.
-Current default:
+# Selected containers
+ansible-playbook run.yaml --tags containers -e '{"media_containers_selected": ["plex"]}'
 
-- `media`
+# Everything (default)
+ansible-playbook run.yaml
+```
 
-Stack templates layout:
+**6. Everything (default, no tags):**
 
-- preferences: `roles/media/templates/stacks/media/Preferences.xml.j2`
+```bash
+ansible-playbook run.yaml
+```
 
-## Usage
+> [!NOTE]
+> Always use JSON format (`-e '{"key": value}'`) when passing lists or booleans. The `key=value` shorthand always passes a string, which breaks list variables like `media_containers_selected`.
+
+### Usage
 
 1. Install required collections: `ansible-galaxy collection install -r requirements.yml`
 2. Fill host vars from example (preferably with 1Password).
 3. Execute playbook: `ansible-playbook run.yaml`
 
-## Plex Claim
+### Plex
 
-1. Plex is known to be fussy when it comes to claiming server from different VLAN. This is a case in this setup,
-2. Thus, `PLEX_CLAIM` env var should be passed to a container before first start
-3. This `PLEX_CLAIM` is using: `curl -X GET https://plex.tv/api/claim/token\?\&X-Plex-Token\=\{$(op read op://Shared/Plex/X-Plex-Token)\}`
-4. X-Plex-Token is stored in 1Password and can be obtained: <https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/>
-5. PLEX_CLAIM is valid for 4m,
+Plex requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
 
-## Notes
+To force re-generation of `Preferences.xml`, set `force_reprovision: true` in the Plex container `meta` in `vars/main.yaml`, run the playbook, then revert the flag.
 
-When repovisioning VM, remember to delete old entries from `known_hosts` login for the first time to add key to known host and try using sudo.
+### Notes
+
+When reprovisioning VM, remember to delete old entries from `known_hosts` and use sudo for first login if needed.

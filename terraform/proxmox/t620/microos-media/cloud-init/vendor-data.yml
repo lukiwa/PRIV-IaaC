@@ -45,7 +45,7 @@ write_files:
       gid="$(id -g mediauser)"
 
       mkdir -p "$mount_point"
-      echo "/dev/disk/by-path/virtio-pci-0000:00:0b.0-part1 $mount_point ntfs-3g rw,noatime,nosuid,nodev,nofail,x-systemd.device-timeout=2s,uid=$uid,gid=$gid,dmask=002,fmask=113 0 0" >> /etc/fstab
+      echo "/dev/disk/by-path/virtio-pci-0000:00:0b.0-part1 $mount_point ntfs-3g rw,noatime,nosuid,nodev,nofail,uid=$uid,gid=$gid,dmask=002,fmask=113 0 0" >> /etc/fstab
       mount -a
 
 runcmd:

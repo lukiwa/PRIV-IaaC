@@ -1,6 +1,4 @@
 ---
-- name: Include package tasks
-  ansible.builtin.include_tasks: packages.yaml
-
-- name: Include quadlet tasks
-  ansible.builtin.include_tasks: quadlet.yaml
+- name: Include container tasks
+  ansible.builtin.include_tasks:
+    file: containers/main.yaml

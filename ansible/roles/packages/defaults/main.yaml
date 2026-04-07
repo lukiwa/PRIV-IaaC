@@ -1,0 +1,4 @@
+---
+packages_list:
+  - podman
+  - tree

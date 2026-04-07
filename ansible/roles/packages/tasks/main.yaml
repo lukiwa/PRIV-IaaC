@@ -1,0 +1,32 @@
+- name: Update packages
+  ansible.builtin.command: transactional-update -n up
+  register: packages_transactional_update_result
+  changed_when: "'No update candidate found' not in packages_transactional_update_result.stdout"
+
+- name: Install packages
+  ansible.builtin.command: "transactional-update -n pkg install {{ packages_list | join(' ') }}"
+  register: packages_transactional_install_result
+  changed_when: >-
+    (((packages_transactional_install_result.stdout | default(''))
+    ~ (packages_transactional_install_result.stderr | default('')))
+    is search('(?i)reboot'))
+  when:
+    - packages_list is defined
+    - packages_list | length > 0
+
+- name: Check if reboot is required
+  ansible.builtin.set_fact:
+    packages_reboot_required: >-
+      {{
+        (((packages_transactional_update_result.stdout | default(''))
+        ~ (packages_transactional_update_result.stderr | default(''))
+        ~ (packages_transactional_install_result.stdout | default(''))
+        ~ (packages_transactional_install_result.stderr | default('')))
+        is search('(?i)reboot'))
+      }}
+
+- name: Reboot after transactional update
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after transactional-update"
+  when:
+    - packages_reboot_required
