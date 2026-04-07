@@ -1,0 +1,22 @@
+---
+infra_quadlet_auto_update: true
+infra_project_dir: /var/lib/infra
+infra_data_dir: "{{ infra_project_dir }}/data"
+
+infra_containers_selected: []
+
+infra_quadlet_options_main:
+  - |
+    [Container]
+    AutoUpdate=registry
+  - |
+    [Unit]
+    Wants=network-online.target
+    After=network-online.target
+  - |
+    [Service]
+    Restart=always
+    RestartSec=5
+  - |
+    [Install]
+    WantedBy=default.target

@@ -1,0 +1,8 @@
+---
+infra_containers:
+  - name: hello-world
+    task: containers/hello-world.yaml
+    config_dir: "{{ infra_data_dir }}/hello-world"
+    meta:
+      env:
+        TZ: "Europe/Warsaw"

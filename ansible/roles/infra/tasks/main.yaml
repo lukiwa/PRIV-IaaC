@@ -1,0 +1,4 @@
+---
+- name: Include container tasks
+  ansible.builtin.include_tasks:
+    file: containers/main.yaml

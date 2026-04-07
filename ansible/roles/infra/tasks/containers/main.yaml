@@ -1,0 +1,253 @@
+- name: Resolve quadlet user UID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -u
+      - "{{ ansible_user }}"
+  register: infra_quadlet_uid_result
+  changed_when: false
+
+- name: Set quadlet variables
+  ansible.builtin.set_fact:
+    infra_quadlet_user_dir: "/home/{{ ansible_user }}/.config/containers/systemd"
+    infra_quadlet_runtime_dir: "/run/user/{{ infra_quadlet_uid_result.stdout }}"
+
+- name: Create required infra directories
+  ansible.builtin.file:
+    path: "{{ infra_dir_item.path }}"
+    state: directory
+    mode: "{{ infra_dir_item.mode }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop:
+    - path: "{{ infra_project_dir }}"
+      mode: "0755"
+    - path: "{{ infra_data_dir }}"
+      mode: "0775"
+    - path: "{{ infra_quadlet_user_dir }}"
+      mode: "0755"
+  loop_control:
+    loop_var: infra_dir_item
+  become: true
+
+- name: Enable systemd linger for quadlet user
+  ansible.builtin.command: "loginctl enable-linger {{ ansible_user }}"
+  become: true
+  changed_when: false
+
+- name: Select containers to deploy
+  ansible.builtin.set_fact:
+    infra_containers_resolved: >-
+      {{
+        infra_containers
+        if (infra_containers_selected | length == 0)
+        else (infra_containers | selectattr('name', 'in', infra_containers_selected) | list)
+      }}
+
+- name: Assert at least one container selected
+  ansible.builtin.assert:
+    that:
+      - infra_containers_resolved | length > 0
+    fail_msg: "No containers selected for deploy/update. Check infra_containers_selected."
+
+- name: Split containers by systemd scope
+  ansible.builtin.set_fact:
+    infra_containers_user: >-
+      {{
+        (infra_containers_resolved | rejectattr('system_service', 'defined') | list)
+        + (infra_containers_resolved | selectattr('system_service', 'defined') | rejectattr('system_service', 'equalto', true) | list)
+      }}
+    infra_containers_system: >-
+      {{
+        infra_containers_resolved
+        | selectattr('system_service', 'defined')
+        | selectattr('system_service', 'equalto', true)
+        | list
+      }}
+
+- name: Create container config directories
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}"
+    state: directory
+    mode: "0775"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop: "{{ infra_containers_resolved }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become: true
+
+- name: Stop user container services before update
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}.service"
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ infra_quadlet_runtime_dir }}"
+  failed_when: false
+  loop: "{{ infra_containers_user }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Stop system container services before update
+  ansible.builtin.systemd_service:
+    name: "{{ item.name }}.service"
+    enabled: false
+    state: stopped
+    scope: system
+  become: true
+  failed_when: false
+  loop: "{{ infra_containers_system }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Initialize containers restart list
+  ansible.builtin.set_fact:
+    infra_containers_to_restart: []
+
+- name: Ensure custom podman networks exist
+  containers.podman.podman_network:
+    name: "{{ infra_network_item }}"
+    state: present
+  loop: >-
+    {{
+      infra_containers_resolved
+      | map(attribute='network', default=[])
+      | flatten
+      | reject('equalto', 'host')
+      | unique
+      | list
+    }}
+  loop_control:
+    loop_var: infra_network_item
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ infra_quadlet_runtime_dir }}"
+
+- name: Include container task files
+  ansible.builtin.include_tasks: "{{ item.task }}"
+  loop: "{{ infra_containers_resolved }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Notify systemd reload
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start container services
+  block:
+    - name: Start user container services
+      ansible.builtin.systemd_service:
+        name: "{{ item.name }}.service"
+        enabled: true
+        state: started
+        scope: user
+      become: true
+      become_user: "{{ ansible_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "{{ infra_quadlet_runtime_dir }}"
+      loop: "{{ infra_containers_user }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Start system container services
+      ansible.builtin.systemd_service:
+        name: "{{ item.name }}.service"
+        enabled: true
+        state: started
+        scope: system
+      become: true
+      loop: "{{ infra_containers_system }}"
+      loop_control:
+        label: "{{ item.name }}"
+  rescue:
+    - name: Collect journal for failed user container services
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --user
+          - -xeu
+          - "{{ item.name }}.service"
+          - --no-pager
+          - -n
+          - "80"
+      become: true
+      become_user: "{{ ansible_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "{{ infra_quadlet_runtime_dir }}"
+      loop: "{{ infra_containers_user }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: infra_journal_user_output
+      failed_when: false
+      changed_when: false
+
+    - name: Collect journal for failed system container services
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - -xeu
+          - "{{ item.name }}.service"
+          - --no-pager
+          - -n
+          - "80"
+      become: true
+      loop: "{{ infra_containers_system }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: infra_journal_system_output
+      failed_when: false
+      changed_when: false
+
+    - name: Show journal output for failed user services
+      ansible.builtin.debug:
+        msg: "{{ item.stdout_lines }}"
+      loop: "{{ infra_journal_user_output.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Show journal output for failed system services
+      ansible.builtin.debug:
+        msg: "{{ item.stdout_lines }}"
+      loop: "{{ infra_journal_system_output.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Fail after collecting diagnostics
+      ansible.builtin.fail:
+        msg: "One or more container services failed to start. See journal output above."
+
+- name: Wait before restarting freshly provisioned containers
+  ansible.builtin.pause:
+    seconds: 60
+  when: infra_containers_to_restart | length > 0
+
+- name: Restart freshly provisioned containers
+  ansible.builtin.systemd_service:
+    name: "{{ container_name }}.service"
+    state: restarted
+    scope: user
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ infra_quadlet_runtime_dir }}"
+  changed_when: true
+  loop: "{{ infra_containers_to_restart }}"
+  loop_control:
+    loop_var: container_name
+  when: infra_containers_to_restart | length > 0
+
+- name: Notify auto-update timer enable (user scope)
+  ansible.builtin.command: /bin/true
+  changed_when: true
+  notify: Enable podman auto-update timer (user scope)
+  when: infra_quadlet_auto_update and (infra_containers_user | length > 0)
+
+- name: Notify auto-update timer enable (system scope)
+  ansible.builtin.command: /bin/true
+  changed_when: true
+  notify: Enable podman auto-update timer (system scope)
+  when: infra_quadlet_auto_update and (infra_containers_system | length > 0)

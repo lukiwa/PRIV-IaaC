@@ -1,58 +1,77 @@
 # Ansible
 
-## Media VM customization
+Post-provision customization for MicroOS VMs: package installation and Podman Quadlet container orchestration.
 
-Ansible is used for post-provision customization, including software installation and container orchestration.
+Each VM has a dedicated role. `run.yaml` runs a separate play per host.
 
-### How it works
+| Host | Role | Vars |
+| --- | --- | --- |
+| `media` | `roles/media` | [roles/media/vars/main.yaml](roles/media/vars/main.yaml) |
+| `infra` | `roles/infra` | [roles/infra/vars/main.yaml](roles/infra/vars/main.yaml) |
 
-- Installs packages from `media_packages` (default: `podman`, `tree`).
-- Orchestrates containers defined in `media_containers` (see [roles/media/vars/main.yaml](roles/media/vars/main.yaml)).
-- Uses Podman Quadlet for systemd-managed containers. User-scope containers use `~/.config/containers/systemd/`, system-scope (e.g. gluetun) use `/etc/containers/systemd/`.
-- Idempotent — safe to re-run at any time. Directories are created if missing, quadlet definitions are updated, services are restarted only when the definition changes.
-- Container-specific provisioning (e.g. Plex `Preferences.xml`) is only done on first run, unless `force_reprovision: true` is set in the container's `meta`.
+## Usage
 
-### Declaring containers
+```bash
+# 1. Install required collections
+ansible-galaxy collection install -r requirements.yml
 
-Containers are defined in `media_containers` in [roles/media/vars/main.yaml](roles/media/vars/main.yaml):
+# 2. Populate host_vars from 1Password
+./setup.sh
+
+# 3. Run everything
+ansible-playbook run.yaml
+
+# 4. Limit to a single host
+ansible-playbook run.yaml --limit media
+ansible-playbook run.yaml --limit infra
+```
+
+> [!NOTE]
+> Always use JSON format (`-e '{"key": value}'`) when passing lists or booleans. The `key=value` shorthand always passes a string, which breaks list variables.
+
+## How it works
+
+- Installs packages from `<role>_packages`.
+- Orchestrates containers defined in `<role>_containers`.
+- Uses Podman Quadlet for systemd-managed containers.
+  - User-scope: `~/.config/containers/systemd/`
+  - System-scope (e.g. gluetun): `/etc/containers/systemd/`
+- Idempotent — directories are created if missing, quadlet definitions are updated, services are restarted only when the definition changes.
+- Container-specific provisioning (e.g. Plex `Preferences.xml`) runs only on first deploy, unless `force_reprovision: true` is set in `meta`.
+
+## Declaring containers
 
 ```yaml
-media_containers:
+<role>_containers:
   - name: mycontainer
-    task: containers/mycontainer.yaml   # task file under roles/media/tasks/
-    config_dir: "{{ media_data_dir }}/mycontainer"
+    task: containers/mycontainer.yaml   # relative to roles/<role>/tasks/
+    config_dir: "{{ <role>_data_dir }}/mycontainer"
     system_service: true                # optional, default: false (user scope)
     network:                            # optional, default: [host]
-      - media-network
+      - podman
     ports:                              # optional
       - "8080:8080"
-    quadlet_options_extra:              # optional, appended to media_quadlet_options_main
+    quadlet_options_extra:              # optional
       - |
         [Service]
         TimeoutStartSec=120
-    meta:                               # container-specific config
+    meta:
       env:
-        TZ: Europe/Berlin
+        TZ: Europe/Warsaw
 ```
 
-Container fields:
+| Field                   | Default  | Description                                          |
+| ----------------------- | -------- | ---------------------------------------------------- |
+| `name`                  | —        | container name                                       |
+| `task`                  | —        | task file path relative to `roles/<role>/tasks/`     |
+| `config_dir`            | —        | config directory on the host                         |
+| `system_service`        | `false`  | `true` for root/system-scope containers              |
+| `network`               | `[host]` | Podman network list                                  |
+| `ports`                 | `[]`     | port mappings (not used with host/container network) |
+| `quadlet_options_extra` | `[]`     | additional quadlet options appended to main options  |
+| `meta`                  | —        | container-specific data (env vars, tokens, etc.)     |
 
-- `name` — container name
-- `task` — path to task file (relative to `roles/media/tasks/`)
-- `config_dir` — config directory on the host
-- `system_service` — set to `true` for root/system-scope containers (e.g. gluetun); defaults to user scope
-- `network` — list of Podman networks; use `host` or `container:<name>` for system containers
-- `ports` — port mappings (not needed when using host or container network)
-- `quadlet_options_extra` — additional quadlet `[Unit]`/`[Container]`/`[Service]` options
-- `meta` — container-specific data (env vars, tokens, etc.)
-
-To select which containers to run, set `media_containers_selected` (empty = all):
-
-```yaml
-media_containers_selected: []  # or e.g. ["plex", "radarr"]
-```
-
-### Selective execution
+## Selective execution
 
 ```bash
 # Only packages
@@ -61,34 +80,19 @@ ansible-playbook run.yaml --tags packages
 # All containers
 ansible-playbook run.yaml --tags containers
 
-# Selected containers
-ansible-playbook run.yaml --tags containers -e '{"media_containers_selected": ["plex"]}'
+# Selected containers (media)
+ansible-playbook run.yaml --limit media --tags containers -e '{"media_containers_selected": ["plex"]}'
 
-# Everything (default)
-ansible-playbook run.yaml
+# Selected containers (infra)
+ansible-playbook run.yaml --limit infra --tags containers -e '{"infra_containers_selected": ["hello-world"]}'
 ```
 
-**6. Everything (default, no tags):**
+## Plex
 
-```bash
-ansible-playbook run.yaml
-```
+Requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
 
-> [!NOTE]
-> Always use JSON format (`-e '{"key": value}'`) when passing lists or booleans. The `key=value` shorthand always passes a string, which breaks list variables like `media_containers_selected`.
+To force re-generation of `Preferences.xml`, set `force_reprovision: true` in the Plex container `meta`, run the playbook, then revert.
 
-### Usage
+## Notes
 
-1. Install required collections: `ansible-galaxy collection install -r requirements.yml`
-2. Populate host_vars from 1Password: `cd ansible && ./setup.sh`
-3. Execute playbook: `ansible-playbook run.yaml`
-
-### Plex
-
-Plex requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
-
-To force re-generation of `Preferences.xml`, set `force_reprovision: true` in the Plex container `meta` in `vars/main.yaml`, run the playbook, then revert the flag.
-
-### Notes
-
-When reprovisioning VM, remember to delete old entries from `known_hosts` and use sudo for first login if needed.
+When reprovisioning a VM, delete the old entry from `known_hosts` before running the playbook.
