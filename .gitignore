@@ -46,6 +46,16 @@ terraform.rc
 **/variables_secrets.tfvars
 **/module.tf
 
+# terragrunt — secrets files (populate via: op inject -i secrets.hcl.example -o secrets.hcl)
+**/secrets.hcl
+**/.terragrunt-cache
+
+# terragrunt — generated state files (local backend)
+.terraform-state/
+
+# terragrunt — generated files (backend.tf, providers.tf written at plan/apply time)
+**/backend.tf
+
 # ansible
 **/host_vars/*.yaml
 **/host_vars/*.yml

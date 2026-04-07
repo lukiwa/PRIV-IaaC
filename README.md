@@ -25,6 +25,7 @@ Required tools:
 
 - `asdf`
 - `terraform`
+- `terragrunt`
 - `packer`
 - `1password`
 - `editorconfig`
@@ -47,7 +48,35 @@ Install plugins and configured versions:
 ```sh
 asdf plugin add terraform
 asdf plugin add packer
+asdf plugin add terragrunt
 asdf install
+```
+
+## Terraform
+
+Secrets are managed via 1Password CLI and are never committed. Populate all
+`secrets.hcl` files before running any Terragrunt command:
+
+```sh
+cd terraform
+./setup.sh
+```
+
+Adding a new VM:
+
+```sh
+# 1. Create a unit directory with terragrunt.hcl + secrets.hcl.example
+mkdir terraform/live/proxmox/t620/my-vm
+
+# 2. Populate secrets (setup.sh finds all secrets.hcl.example recursively)
+cd terraform && ./setup.sh
+
+# 3. Init (generates .terraform.lock.hcl — commit this)
+cd live/proxmox/t620/my-vm && terragrunt init
+
+# 4. Deploy
+terragrunt plan
+terragrunt apply
 ```
 
 ## License
