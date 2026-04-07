@@ -80,7 +80,7 @@ ansible-playbook run.yaml
 ### Usage
 
 1. Install required collections: `ansible-galaxy collection install -r requirements.yml`
-2. Fill host vars from example (preferably with 1Password).
+2. Populate host_vars from 1Password: `cd ansible && ./setup.sh`
 3. Execute playbook: `ansible-playbook run.yaml`
 
 ### Plex
