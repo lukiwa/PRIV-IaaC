@@ -70,7 +70,7 @@ jobs:
           terragrunt-version: ${{ steps.versions.outputs.terragrunt }}
 
       - name: Terragrunt hclfmt check
-        run: terragrunt hclfmt --check --diff terraform/live
+        run: terragrunt hcl format --check --diff terraform/live
 
   tflint:
     name: TFLint
