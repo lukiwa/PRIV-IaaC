@@ -24,51 +24,76 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Read tool versions
+        id: versions
+        run: |
+          echo "terraform=$(grep '^terraform ' .tool-versions | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ steps.versions.outputs.terraform }}
 
       - name: Terraform fmt check
-        run: terraform fmt -check -recursive terraform
+        run: terraform fmt -check -recursive terraform/modules
 
-      - name: Terraform init + validate (root modules)
+      - name: Terraform init + validate (modules)
         shell: bash
         run: |
           set -euo pipefail
-
-          declare -A all_tf_dirs=()
-          declare -A root_tf_dirs=()
-
-          while IFS= read -r -d '' tf_file; do
-            all_tf_dirs["$(dirname "$tf_file")"]=1
-          done < <(find terraform -type f -name '*.tf' ! -path '*/.terraform/*' -print0)
-
-          if [[ ${#all_tf_dirs[@]} -eq 0 ]]; then
-            echo "No Terraform directories found."
-            exit 0
-          fi
-
-          for dir in "${!all_tf_dirs[@]}"; do
-            parent="$(dirname "$dir")"
-            is_child_module=false
-
-            while [[ "$parent" == terraform/* ]]; do
-              if [[ -n "${all_tf_dirs[$parent]:-}" ]]; then
-                is_child_module=true
-                break
-              fi
-              parent="$(dirname "$parent")"
-            done
-
-            if [[ "$is_child_module" == false ]]; then
-              root_tf_dirs["$dir"]=1
-            fi
-          done
-
-          for dir in $(printf '%s\n' "${!root_tf_dirs[@]}" | sort); do
+          for dir in terraform/modules/*/; do
             echo "Validating: $dir"
             (
               cd "$dir"
               terraform init -backend=false -input=false -no-color
               terraform validate -no-color
             )
+          done
+
+  terragrunt-checks:
+    name: Terragrunt checks
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read tool versions
+        id: versions
+        run: |
+          echo "terragrunt=$(grep '^terragrunt ' .tool-versions | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v3
+        with:
+          terragrunt-version: ${{ steps.versions.outputs.terragrunt }}
+
+      - name: Terragrunt hclfmt check
+        run: terragrunt hcl format --check --diff terraform/live
+
+  tflint:
+    name: TFLint
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run TFLint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in terraform/modules/*/; do
+            echo "Linting: $dir"
+            tflint --chdir="$dir" --format=compact
           done

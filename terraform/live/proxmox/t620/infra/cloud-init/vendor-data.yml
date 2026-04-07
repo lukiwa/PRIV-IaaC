@@ -1,0 +1,40 @@
+#cloud-config
+# As redundant as it may seem:
+# - root login disabled from: PVE passwd, SSH passwd, SSH key, su passwd
+# - infrauser login enabled from: PVE passwd, SSH key
+# - infrauser access to sudo with its password, but not root password, and not without password
+
+disable_root: true
+ssh_pwauth: false
+
+growpart:
+  mode: auto
+  devices:
+    - /dev/vda3
+
+bootcmd:
+  - usermod -L root
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-cloud-hardening.conf
+    permissions: "0640"
+    owner: root:root
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      ChallengeResponseAuthentication no
+      PubkeyAuthentication yes
+      PermitRootLogin no
+  - path: /etc/sudoers.d/99-infrauser-require-password
+    permissions: "0440"
+    owner: root:root
+    content: |
+      Defaults:infrauser !targetpw
+      Defaults:infrauser !rootpw
+      Defaults:infrauser !runaspw
+      infrauser ALL=(ALL:ALL) ALL
+
+runcmd:
+  - usermod -aG wheel infrauser
+  - btrfs filesystem resize max /var
+  - systemctl restart sshd
