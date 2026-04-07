@@ -8,7 +8,7 @@ Build configuration for Proxmox VM templates using Packer.
 
 - `proxmox/t620/variables.pkr.hcl` (global for all distros on this host)
 - `proxmox/t620/<DISTRO>/variables.pkr.hcl` (Distro-specific)
-- `proxmox/t620/variables_secrets.pkr.hcl` - based on the `.example` file, when using 1password, op inject command can be used: `op inject -i variables_secrets.pkr.hcl.example -o variables_secrets.pkr.hcl`
+- `proxmox/t620/secrets.pkr.hcl` - populate from 1Password: `cd packer && ./setup.sh`
 
 1. Ensure the Proxmox API token is generated and has permissions for VM creation and storage operations.
 
@@ -21,12 +21,12 @@ packer init config.pkr.hcl
 packer validate \
   -var-file='t620/variables.pkr.hcl' \
   -var-file='t620/<DISTRO>/variables.pkr.hcl' \
-  -var-file='t620/variables_secrets.pkr.hcl' \
+  -var-file='t620/secrets.pkr.hcl' \
   t620/<DISTRO>/proxmox-iso.pkr.hcl
 packer build -force \
   -var-file='t620/variables.pkr.hcl' \
   -var-file='t620/<DISTRO>/variables.pkr.hcl' \
-  -var-file='t620/variables_secrets.pkr.hcl' \
+  -var-file='t620/secrets.pkr.hcl' \
   t620/<DISTRO>/proxmox-iso.pkr.hcl
 ```
 
