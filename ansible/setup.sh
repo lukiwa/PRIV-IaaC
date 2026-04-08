@@ -12,7 +12,7 @@ echo "Injecting secrets from 1Password..."
 
 while IFS= read -r -d '' example; do
   target="${example%.example}"
-  echo "  ${example#"$SCRIPT_DIR/"} → ${target#"$SCRIPT_DIR/"}"
+  echo "  ${example#"$SCRIPT_DIR/"} -> ${target#"$SCRIPT_DIR/"}"
   op inject -i "$example" -o "$target"
 done < <(find "$SCRIPT_DIR/host_vars" -name "*.example" -print0 | sort -z)
 
