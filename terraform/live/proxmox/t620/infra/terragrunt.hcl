@@ -35,7 +35,7 @@ inputs = {
   cpu_cores   = 2
   cpu_sockets = 1
   memory      = 2048
-  balloon     = 512
+  balloon     = 1536
 
   disk_size    = "25G"
   disk_storage = "local-zfs"
