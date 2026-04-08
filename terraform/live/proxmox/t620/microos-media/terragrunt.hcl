@@ -32,9 +32,10 @@ inputs = {
   target_node    = include.env.locals.target_node
   clone_template = "microos.20260315-2129"
 
-  cpu_cores   = 4
+  cpu_cores   = 3
   cpu_sockets = 1
-  memory      = 5024
+  memory      = 4028
+  balloon     = 512
 
   disk_size    = "45G"
   disk_storage = "local-zfs"
