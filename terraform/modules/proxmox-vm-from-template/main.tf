@@ -62,7 +62,8 @@ resource "proxmox_vm_qemu" "this" {
     sockets = var.cpu_sockets
   }
 
-  memory = var.memory
+  memory  = var.memory
+  balloon = var.balloon
 
   network {
     id      = 0

@@ -57,6 +57,12 @@ variable "memory" {
   description = "RAM in megabytes."
 }
 
+variable "balloon" {
+  type        = number
+  default     = 0
+  description = "Minimum RAM for ballooning in megabytes. 0 disables ballooning."
+}
+
 variable "disk_size" {
   type    = string
   default = "20G"
