@@ -1,0 +1,49 @@
+http:
+  routers:
+    bazarr:
+      rule: "Host(`bazarr.{{ infra_traefik_domain }}`)"
+      service: bazarr
+      entryPoints:
+        - web
+    prowlarr:
+      rule: "Host(`prowlarr.{{ infra_traefik_domain }}`)"
+      service: prowlarr
+      entryPoints:
+        - web
+    qbittorrent:
+      rule: "Host(`qbittorrent.{{ infra_traefik_domain }}`)"
+      service: qbittorrent
+      entryPoints:
+        - web
+    radarr:
+      rule: "Host(`radarr.{{ infra_traefik_domain }}`)"
+      service: radarr
+      entryPoints:
+        - web
+    sonarr:
+      rule: "Host(`sonarr.{{ infra_traefik_domain }}`)"
+      service: sonarr
+      entryPoints:
+        - web
+
+  services:
+    bazarr:
+      loadBalancer:
+        servers:
+          - url: "http://{{ infra_traefik_media_host }}:6767"
+    prowlarr:
+      loadBalancer:
+        servers:
+          - url: "http://{{ infra_traefik_media_host }}:9696"
+    qbittorrent:
+      loadBalancer:
+        servers:
+          - url: "http://{{ infra_traefik_media_host }}:8182"
+    radarr:
+      loadBalancer:
+        servers:
+          - url: "http://{{ infra_traefik_media_host }}:7878"
+    sonarr:
+      loadBalancer:
+        servers:
+          - url: "http://{{ infra_traefik_media_host }}:8989"

@@ -5,6 +5,9 @@ infra_data_dir: "{{ infra_project_dir }}/data"
 
 infra_containers_selected: []
 
+infra_traefik_domain: ""
+infra_traefik_media_host: ""
+
 infra_quadlet_options_main:
   - |
     [Container]

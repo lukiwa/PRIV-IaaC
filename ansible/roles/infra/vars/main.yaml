@@ -1,8 +1,9 @@
 ---
 infra_containers:
-  - name: hello-world
-    task: containers/hello-world.yaml
-    config_dir: "{{ infra_data_dir }}/hello-world"
+  - name: traefik
+    task: containers/traefik.yaml
+    config_dir: "{{ infra_data_dir }}/traefik"
+    network:
+      - host
     meta:
-      env:
-        TZ: "Europe/Warsaw"
+      env: {}

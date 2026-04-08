@@ -3,3 +3,6 @@
 ansible_host: "{{op://Private/Proxmox-T620-Infra/ip}}"
 ansible_become_password: "{{op://Private/Proxmox-T620-Infra/password}}"
 ansible_user: "{{op://Private/Proxmox-T620-Infra/user}}"
+
+infra_traefik_media_host: "{{op://Private/Proxmox-T620-Media/ip}}"
+infra_traefik_domain: "{{op://Private/Proxmox-T620-Infra/traefik-domain}}"

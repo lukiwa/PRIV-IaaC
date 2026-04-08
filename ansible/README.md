@@ -87,6 +87,48 @@ ansible-playbook run.yaml --limit media --tags containers -e '{"media_containers
 ansible-playbook run.yaml --limit infra --tags containers -e '{"infra_containers_selected": ["hello-world"]}'
 ```
 
+## Traefik (infra VM)
+
+Traefik runs as a reverse proxy on the infra VM, routing traffic to services on the media VM based on hostname.
+
+The domain scheme is `<service>.<domain>`, where the domain is set via `infra_traefik_domain` (e.g. `t620.home.arpa`).
+
+### DNS
+
+All wildcard entries must point to the infra VM IP.
+
+#### NextDNS — Rewrites
+
+In the NextDNS panel → **Rewrites**, add:
+
+```
+*.t620.home.arpa → <infra VM IP>
+```
+
+#### OPNsense — Unbound DNS
+
+If not using NextDNS or as a local fallback, add a wildcard override via **Services → Unbound DNS → Custom options**:
+
+```
+local-zone: "t620.home.arpa." redirect
+local-data: "t620.home.arpa. A <infra VM IP>"
+```
+
+> [!NOTE]
+> Entries like `*.media-t620.home.arpa` and `*.infra-t620.home.arpa` point to their respective VMs and do not conflict with the Traefik wildcard.
+
+### Routes
+
+| URL | Backend |
+|-----|---------|
+| `radarr.t620.home.arpa` | media VM :7878 |
+| `sonarr.t620.home.arpa` | media VM :8989 |
+| `prowlarr.t620.home.arpa` | media VM :9696 |
+| `bazarr.t620.home.arpa` | media VM :6767 |
+| `qbittorrent.t620.home.arpa` | media VM :8182 |
+
+Dashboard available at `http://<infra VM IP>:8080/dashboard/`.
+
 ## Plex
 
 Requires a claim token for first-time setup. Set `media_plex_x_plex_token` in host_vars (see [Plex docs](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)).
