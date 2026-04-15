@@ -7,10 +7,21 @@
   register: media_quadlet_uid_result
   changed_when: false
 
+- name: Resolve quadlet user GID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -g
+      - "{{ ansible_user }}"
+  register: media_quadlet_gid_result
+  changed_when: false
+
 - name: Set quadlet variables
   ansible.builtin.set_fact:
     media_quadlet_user_dir: "/home/{{ ansible_user }}/.config/containers/systemd"
     media_quadlet_runtime_dir: "/run/user/{{ media_quadlet_uid_result.stdout }}"
+    media_quadlet_uid: "{{ media_quadlet_uid_result.stdout }}"
+    media_quadlet_gid: "{{ media_quadlet_gid_result.stdout }}"
 
 - name: Create required media directories
   ansible.builtin.file:
@@ -108,13 +119,13 @@
   ansible.builtin.set_fact:
     media_containers_to_restart: []
 
-- name: Ensure custom podman networks exist
+- name: Ensure custom podman networks exist (user scope)
   containers.podman.podman_network:
     name: "{{ media_network_item }}"
     state: present
   loop: >-
     {{
-      media_containers_resolved
+      media_containers_user
       | map(attribute='network', default=[])
       | flatten
       | reject('equalto', 'host')
@@ -127,6 +138,23 @@
   become_user: "{{ ansible_user }}"
   environment:
     XDG_RUNTIME_DIR: "{{ media_quadlet_runtime_dir }}"
+
+- name: Ensure custom podman networks exist (system scope)
+  containers.podman.podman_network:
+    name: "{{ media_network_item }}"
+    state: present
+  loop: >-
+    {{
+      media_containers_system
+      | map(attribute='network', default=[])
+      | flatten
+      | reject('equalto', 'host')
+      | unique
+      | list
+    }}
+  loop_control:
+    loop_var: media_network_item
+  become: true
 
 - name: Include container task files
   ansible.builtin.include_tasks: "{{ item.task }}"

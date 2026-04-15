@@ -82,45 +82,34 @@ media_containers:
         LOG_LEVEL: "info"
         LOG_HTML: "false"
         CAPTCHA_SOLVER: "none"
-  - name: gluetun
-    task: containers/gluetun.yaml
+  - name: delugevpn
+    task: containers/delugevpn.yaml
+    config_dir: "{{ media_data_dir }}/delugevpn"
     system_service: true
-    config_dir: "{{ media_data_dir }}/gluetun"
     network:
-      - host
+      - media-network
+    ports:
+      - "8112:8112"
+      - "58946:58946"
     quadlet_options_extra:
-      - |
-        [Container]
-        HealthCmd=CMD-SHELL /gluetun-entrypoint healthcheck
-        HealthInterval=30s
-        HealthRetries=3
-        HealthStartPeriod=20s
-        HealthTimeout=5s
-        HealthOnFailure=kill
       - |
         [Service]
-        TimeoutStartSec=300
-        Restart=on-failure
+        TimeoutStartSec=600
     meta:
       env:
-        VPN_SERVICE_PROVIDER: "{{ media_gluetun_vpn_service_provider }}"
-        VPN_TYPE: "{{ media_gluetun_vpn_type }}"
-        WIREGUARD_PRIVATE_KEY: "{{ media_gluetun_wireguard_private_key }}"
-        WIREGUARD_ADDRESSES: "{{ media_gluetun_wireguard_addresses }}"
-        SERVER_CITIES: "{{ media_gluetun_server_cities }}"
-  - name: qbittorrent
-    task: containers/qbittorrent.yaml
-    system_service: true
-    config_dir: "{{ media_data_dir }}/qbittorrent"
-    quadlet_options_extra:
-      - |
-        [Unit]
-        Requires=gluetun.service
-        After=gluetun.service
-    meta:
-      env:
-        TZ: Europe/Warsaw
-        WEBUI_PORT: "8182"
+        VPN_ENABLED: "yes"
+        VPN_CLIENT: "wireguard"
+        VPN_PROV: "custom"
+        LAN_NETWORK: "{{ media_delugevpn_lan_network }}"
+        ENABLE_PRIVOXY: "no"
+        PUID: "{{ media_quadlet_uid }}"
+        PGID: "{{ media_quadlet_gid }}"
+        UMASK: "000"
+        DEBUG: "false"
+        TZ: "Europe/Warsaw"
+        DELUGE_DAEMON_LOG_LEVEL: "info"
+        DELUGE_WEB_LOG_LEVEL: "info"
+        DELUGE_ENABLE_WEBUI_PASSWORD: "yes"
   - name: bazarr
     task: containers/bazarr.yaml
     config_dir: "{{ media_data_dir }}/bazarr"

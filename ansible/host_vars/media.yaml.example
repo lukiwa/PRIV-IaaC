@@ -6,8 +6,10 @@ ansible_user: "{{op://Private/Proxmox-T620-Media/user}}"
 
 media_plex_x_plex_token: "{{op://Shared/Plex/X-Plex-Token}}"
 
-media_gluetun_wireguard_private_key: "{{op://Private/Mullvad-VPN/wireguard-private-key}}"
-media_gluetun_wireguard_addresses: "{{op://Private/Mullvad-VPN/wireguard-addresses}}"
-media_gluetun_server_cities: "{{op://Private/Mullvad-VPN/server-cities}}"
-media_gluetun_vpn_service_provider: "mullvad"
-media_gluetun_vpn_type: "wireguard"
+media_delugevpn_wireguard_private_key: "{{op://Private/Mullvad-VPN/wireguard-private-key-2}}"
+media_delugevpn_wireguard_address: "{{op://Private/Mullvad-VPN/wireguard-addresses-2}}"
+media_delugevpn_wireguard_dns: "{{op://Private/Mullvad-VPN/wireguard-dns-2}}"
+media_delugevpn_wireguard_peer_public_key: "{{op://Private/Mullvad-VPN/wireguard-public-key-2}}"
+media_delugevpn_wireguard_endpoint: "{{op://Private/Mullvad-VPN/wireguard-endpoint-2}}"
+media_delugevpn_lan_network: "192.168.20.0/24, 192.168.1.0/24"
+

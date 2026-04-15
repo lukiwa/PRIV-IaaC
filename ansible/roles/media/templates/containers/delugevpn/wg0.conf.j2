@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey = {{ media_delugevpn_wireguard_private_key }}
+Address = {{ media_delugevpn_wireguard_address }}
+DNS = {{ media_delugevpn_wireguard_dns }}
+
+[Peer]
+PublicKey = {{ media_delugevpn_wireguard_peer_public_key }}
+AllowedIPs = 0.0.0.0/0,::0/0
+Endpoint = {{ media_delugevpn_wireguard_endpoint }}

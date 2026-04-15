@@ -1,0 +1,58 @@
+---
+- name: Ensure ip_tables kernel module is loaded
+  community.general.modprobe:
+    name: ip_tables
+    state: present
+    persistent: present
+  become: true
+
+- name: Create torrents incomplete directory
+  ansible.builtin.file:
+    path: "{{ media_mount_root }}/torrents/incomplete"
+    state: directory
+    mode: "0775"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+
+- name: Create WireGuard config directory
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}/wireguard"
+    state: directory
+    mode: "0700"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+
+- name: Deploy WireGuard config
+  ansible.builtin.template:
+    src: containers/delugevpn/wg0.conf.j2
+    dest: "{{ item.config_dir }}/wireguard/wg0.conf"
+    mode: "0600"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+  no_log: true
+
+- name: Create or update DelugeVPN Quadlet definition
+  containers.podman.podman_container:
+    name: "{{ item.name }}"
+    image: docker.io/binhex/arch-delugevpn:latest
+    state: quadlet
+    quadlet_dir: /etc/containers/systemd
+    quadlet_filename: "{{ item.name }}"
+    quadlet_file_mode: "0644"
+    network: "{{ item.network | default(['media-network']) }}"
+    ports: "{{ item.ports | default([]) }}"
+    privileged: true
+    sysctl:
+      net.ipv4.conf.all.src_valid_mark: "1"
+    device:
+      - /dev/net/tun:/dev/net/tun
+    volume:
+      - "{{ item.config_dir }}:/config:Z"
+      - "{{ media_mount_root }}/torrents:/downloads"
+    env: "{{ item.meta.env }}"
+    quadlet_options: "{{ media_quadlet_options_main + (item.quadlet_options_extra | default([])) }}"
+  become: true
+  notify: Reload systemd daemon

@@ -10,9 +10,9 @@ http:
       service: prowlarr
       entryPoints:
         - web
-    qbittorrent:
-      rule: "Host(`qbittorrent.{{ infra_traefik_domain }}`)"
-      service: qbittorrent
+    deluge:
+      rule: "Host(`deluge.{{ infra_traefik_domain }}`)"
+      service: deluge
       entryPoints:
         - web
     radarr:
@@ -35,10 +35,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://{{ infra_traefik_media_host }}:9696"
-    qbittorrent:
+    deluge:
       loadBalancer:
         servers:
-          - url: "http://{{ infra_traefik_media_host }}:8182"
+          - url: "http://{{ infra_traefik_media_host }}:8112"
     radarr:
       loadBalancer:
         servers:
