@@ -17,6 +17,7 @@ media_quadlet_options_main:
     [Service]
     Restart=always
     RestartSec=5
+    TimeoutStartSec=600
   - |
     [Install]
     WantedBy=default.target
