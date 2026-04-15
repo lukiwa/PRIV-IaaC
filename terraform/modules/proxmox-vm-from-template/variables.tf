@@ -143,3 +143,9 @@ variable "external_disk_path" {
   default     = ""
   description = "Full path to the disk to passthrough as virtio1 (e.g. '/dev/disk/by-id/ata-...', '/dev/disk/by-uuid/...'). Leave empty to skip."
 }
+
+variable "start_at_node_boot" {
+  type        = bool
+  default     = false
+  description = "Whether the VM should start automatically at node boot."
+}
