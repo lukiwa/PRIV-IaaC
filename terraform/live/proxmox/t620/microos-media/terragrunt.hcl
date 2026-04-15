@@ -32,6 +32,8 @@ inputs = {
   target_node    = include.env.locals.target_node
   clone_template = "microos.20260315-2129"
 
+  start_at_node_boot = true
+
   cpu_cores   = 4
   cpu_sockets = 1
   memory      = 5120

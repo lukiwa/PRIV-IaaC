@@ -50,6 +50,8 @@ resource "proxmox_vm_qemu" "this" {
   force_create = var.force_create
   target_node  = var.target_node
 
+  start_at_node_boot = var.start_at_node_boot
+
   depends_on = [terraform_data.cloud_init_upload]
 
   agent     = 1
