@@ -22,7 +22,7 @@
 - name: Check if UniFi OS Server is already installed
   ansible.builtin.stat:
     path: /etc/systemd/system/uosserver.service
-  register: uosserver_service_file
+  register: unifi_uosserver_service_file
 
 - name: Stub sysctl to bypass LXC kernel namespace restrictions
   ansible.builtin.copy:
@@ -35,12 +35,13 @@
       /usr/sbin/sysctl $@ || true
       exit 0
     mode: "0755"
-  when: not uosserver_service_file.stat.exists
+  when: not unifi_uosserver_service_file.stat.exists
 
 - name: Run UniFi OS Server installer
   ansible.builtin.shell:
-    cmd: yes | /tmp/unifi-os-server-installer
-  when: not uosserver_service_file.stat.exists
+    cmd: set -o pipefail && yes | /tmp/unifi-os-server-installer
+    executable: /bin/bash
+  when: not unifi_uosserver_service_file.stat.exists
   changed_when: true
   async: 1800  # 30 min — image pull can take a while on slow connections
   poll: 15
