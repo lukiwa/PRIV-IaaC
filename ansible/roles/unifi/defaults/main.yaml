@@ -1,0 +1,5 @@
+---
+# Download URL for the UniFi OS Server Linux installer.
+# Copy the link from https://ui.com/download or https://community.ui.com/releases
+# Example: https://fw-download.ubnt.com/data/unifi-os-server/8b93-linux-x64-4.2.23-<hash>
+unifi_os_server_url: ""
