@@ -16,3 +16,10 @@
       tags: packages
     - role: infra
       tags: infra
+
+- name: Unifi
+  hosts: unifi
+  become: true
+  roles:
+    - role: unifi
+      tags: unifi

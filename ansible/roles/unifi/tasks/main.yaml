@@ -1,0 +1,58 @@
+---
+- name: Assert that installer URL is provided
+  ansible.builtin.assert:
+    that: unifi_os_server_url != ""
+    fail_msg: "unifi_os_server_url must be set. Copy the link from https://ui.com/download"
+
+- name: Install dependencies
+  ansible.builtin.apt:
+    name:
+      - podman
+      - slirp4netns
+    state: present
+    update_cache: true
+
+- name: Download UniFi OS Server installer
+  ansible.builtin.get_url:
+    url: "{{ unifi_os_server_url }}"
+    dest: /tmp/unifi-os-server-installer
+    mode: "0755"
+  register: unifi_download
+
+- name: Check if UniFi OS Server is already installed
+  ansible.builtin.stat:
+    path: /etc/systemd/system/uosserver.service
+  register: unifi_uosserver_service_file
+
+- name: Stub sysctl to bypass LXC kernel namespace restrictions
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/sysctl
+    content: |
+      #!/bin/sh
+      # sysctl writes are blocked in LXC containers for non-namespaced kernel params.
+      # The installer calls `sysctl --system` which fails with EPERM.
+      # This stub forwards to the real sysctl but ignores errors so the installer proceeds.
+      /usr/sbin/sysctl $@ || true
+      exit 0
+    mode: "0755"
+  when: not unifi_uosserver_service_file.stat.exists
+
+- name: Run UniFi OS Server installer
+  ansible.builtin.shell:
+    cmd: set -o pipefail && yes | /tmp/unifi-os-server-installer
+    executable: /bin/bash
+  when: not unifi_uosserver_service_file.stat.exists
+  changed_when: true
+  async: 1800  # 30 min — image pull can take a while on slow connections
+  poll: 15
+
+- name: Remove sysctl stub
+  ansible.builtin.file:
+    path: /usr/local/sbin/sysctl
+    state: absent
+
+- name: Ensure UniFi OS Server service is enabled and running
+  ansible.builtin.systemd:
+    name: uosserver
+    enabled: true
+    state: started

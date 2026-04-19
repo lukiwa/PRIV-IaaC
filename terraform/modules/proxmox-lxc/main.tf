@@ -75,3 +75,31 @@ resource "proxmox_lxc" "this" {
     ignore_changes = [network]
   }
 }
+
+# Passes /dev/net/tun into the container so Podman can create tun interfaces.
+# Required for UniFi OS Server (and any other workload using Podman networking).
+# Only works with privileged containers (unprivileged = false).
+# https://github.com/kam821/Unifi-OS-Server-on-LXC-Proxmox
+resource "terraform_data" "tun_passthrough" {
+  count = var.tun_passthrough ? 1 : 0
+
+  triggers_replace = [proxmox_lxc.this.vmid]
+
+  depends_on = [proxmox_lxc.this]
+
+  connection {
+    type     = "ssh"
+    host     = var.proxmox_host
+    user     = var.proxmox_ssh_user
+    password = var.proxmox_ssh_password
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "pct stop ${proxmox_lxc.this.vmid}",
+      "grep -qF 'lxc.cgroup2.devices.allow: c 10:200' /etc/pve/lxc/${proxmox_lxc.this.vmid}.conf || echo 'lxc.cgroup2.devices.allow: c 10:200 rwm' >> /etc/pve/lxc/${proxmox_lxc.this.vmid}.conf",
+      "grep -qF 'lxc.mount.entry: /dev/net/tun' /etc/pve/lxc/${proxmox_lxc.this.vmid}.conf || echo 'lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file' >> /etc/pve/lxc/${proxmox_lxc.this.vmid}.conf",
+      "pct start ${proxmox_lxc.this.vmid}",
+    ]
+  }
+}

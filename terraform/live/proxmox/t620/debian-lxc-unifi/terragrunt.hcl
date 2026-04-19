@@ -36,9 +36,9 @@ inputs = {
 
   unprivileged = false
 
-  cpu_cores = 2
-  memory    = 2048
-  swap      = 1024
+  cpu_cores = 4
+  memory    = 3072
+  swap      = 2048
 
   disk_storage = "local-zfs"
   disk_size    = "20G"
@@ -51,6 +51,7 @@ inputs = {
   sshkeys  = include.lxc_secrets.locals.public_key
 
   features_nesting   = true
+  tun_passthrough    = true
   start_at_node_boot = false
   force_create       = false
 }
