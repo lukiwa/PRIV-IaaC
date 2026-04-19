@@ -125,6 +125,12 @@ variable "sshkeys" {
   description = "Newline-separated authorized SSH public keys for root."
 }
 
+variable "tun_passthrough" {
+  type        = bool
+  default     = false
+  description = "Pass /dev/net/tun into the container (required for Podman networking in UniFi OS Server). Only works with privileged containers."
+}
+
 variable "start_at_node_boot" {
   type        = bool
   default     = false
