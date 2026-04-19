@@ -56,11 +56,11 @@ resource "proxmox_lxc" "this" {
   }
 
   network {
-    name    = "eth0"
-    bridge  = var.network_bridge
-    ip      = var.ip
-    gw      = var.ip != "dhcp" && var.gateway != "" ? var.gateway : null
-    hwaddr  = var.network_macaddr != "" ? var.network_macaddr : null
+    name   = "eth0"
+    bridge = var.network_bridge
+    ip     = var.ip
+    gw     = var.ip != "dhcp" && var.gateway != "" ? var.gateway : null
+    hwaddr = var.network_macaddr != "" ? var.network_macaddr : null
   }
 
   depends_on = [terraform_data.template_download]
