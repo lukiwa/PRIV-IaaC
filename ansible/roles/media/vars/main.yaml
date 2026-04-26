@@ -65,23 +65,6 @@ media_containers:
     meta:
       env:
         TZ: "Europe/Warsaw"
-  - name: flaresolverr
-    task: containers/flaresolverr.yaml
-    config_dir: "{{ media_data_dir }}/flaresolverr"
-    network:
-      - media-network
-    ports:
-      - "8191:8191"
-    quadlet_options_extra:
-      - |
-        [Service]
-        TimeoutStartSec=300
-    meta:
-      env:
-        TZ: "Europe/Warsaw"
-        LOG_LEVEL: "info"
-        LOG_HTML: "false"
-        CAPTCHA_SOLVER: "none"
   - name: delugevpn
     task: containers/delugevpn.yaml
     config_dir: "{{ media_data_dir }}/delugevpn"
