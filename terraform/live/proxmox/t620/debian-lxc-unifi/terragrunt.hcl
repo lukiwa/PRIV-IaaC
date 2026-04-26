@@ -52,6 +52,6 @@ inputs = {
 
   features_nesting   = true
   tun_passthrough    = true
-  start_at_node_boot = false
+  start_at_node_boot = true
   force_create       = false
 }
