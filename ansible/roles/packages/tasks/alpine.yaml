@@ -1,0 +1,13 @@
+---
+- name: Update and upgrade packages
+  community.general.apk:
+    update_cache: true
+    upgrade: true
+
+- name: Install packages
+  community.general.apk:
+    name: "{{ packages_list }}"
+    state: present
+  when:
+    - packages_list is defined
+    - packages_list | length > 0

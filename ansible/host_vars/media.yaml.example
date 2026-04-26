@@ -13,3 +13,7 @@ media_delugevpn_wireguard_peer_public_key: "{{op://Private/Mullvad-VPN/wireguard
 media_delugevpn_wireguard_endpoint: "{{op://Private/Mullvad-VPN/wireguard-endpoint-2}}"
 media_delugevpn_lan_network: "192.168.20.0/24, 192.168.1.0/24"
 
+packages_list:
+  - podman
+  - tree
+

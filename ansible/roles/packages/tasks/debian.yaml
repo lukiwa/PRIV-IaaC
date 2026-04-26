@@ -1,0 +1,32 @@
+---
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 0
+    lock_timeout: 300
+  register: packages_apt_upgrade_result
+
+- name: Install packages
+  ansible.builtin.apt:
+    name: "{{ packages_list }}"
+    state: present
+  when:
+    - packages_list is defined
+    - packages_list | length > 0
+
+- name: Remove unused dependencies
+  ansible.builtin.apt:
+    autoremove: true
+    purge: true
+
+- name: Check if reboot is required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: packages_reboot_required_file
+
+- name: Reboot if required
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after apt upgrade"
+  when:
+    - packages_reboot_required | default(false) or packages_reboot_required_file.stat.exists
