@@ -1,34 +1,19 @@
-- name: Update packages
-  ansible.builtin.command: transactional-update -n up
-  register: packages_transactional_update_result
-  changed_when: "'No update candidate found' not in packages_transactional_update_result.stdout"
-  poll: 15
+- name: Assert supported OS
+  ansible.builtin.assert:
+    that: >-
+      ansible_facts["os_family"] == "Debian"
+      or ansible_facts["distribution"] == "openSUSE MicroOS"
+      or ansible_facts["os_family"] == "Alpine"
+    fail_msg: "Unsupported OS: {{ ansible_facts['distribution'] }} ({{ ansible_facts['os_family'] }})"
 
-- name: Install packages
-  ansible.builtin.command: "transactional-update -n pkg install {{ packages_list | join(' ') }}"
-  register: packages_transactional_install_result
-  changed_when: >-
-    (((packages_transactional_install_result.stdout | default(''))
-    ~ (packages_transactional_install_result.stderr | default('')))
-    is search('(?i)reboot'))
-  poll: 15
-  when:
-    - packages_list is defined
-    - packages_list | length > 0
+- name: Run Debian package tasks
+  ansible.builtin.include_tasks: debian.yaml
+  when: ansible_facts["os_family"] == "Debian"
 
-- name: Check if reboot is required
-  ansible.builtin.set_fact:
-    packages_reboot_required: >-
-      {{
-        (((packages_transactional_update_result.stdout | default(''))
-        ~ (packages_transactional_update_result.stderr | default(''))
-        ~ (packages_transactional_install_result.stdout | default(''))
-        ~ (packages_transactional_install_result.stderr | default('')))
-        is search('(?i)reboot'))
-      }}
+- name: Run MicroOS package tasks
+  ansible.builtin.include_tasks: microos.yaml
+  when: ansible_facts["distribution"] == "openSUSE MicroOS"
 
-- name: Reboot after transactional update
-  ansible.builtin.reboot:
-    msg: "Reboot initiated by Ansible after transactional-update"
-  when:
-    - packages_reboot_required
+- name: Run Alpine package tasks
+  ansible.builtin.include_tasks: alpine.yaml
+  when: ansible_facts["os_family"] == "Alpine"

@@ -1,4 +1,6 @@
 ---
-packages_list:
-  - podman
-  - tree
+# List of extra packages to install (on top of system update)
+packages_list: []
+
+# Set to true to force reboot even if the system doesn't detect it as required (Debian)
+packages_reboot_required: false

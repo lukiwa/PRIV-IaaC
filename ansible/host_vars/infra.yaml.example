@@ -6,3 +6,7 @@ ansible_user: "{{op://Private/Proxmox-T620-Infra/user}}"
 
 infra_traefik_media_host: "{{op://Private/Proxmox-T620-Media/ip}}"
 infra_traefik_domain: "{{op://Private/Proxmox-T620-Infra/traefik-domain}}"
+
+packages_list:
+  - podman
+  - tree
