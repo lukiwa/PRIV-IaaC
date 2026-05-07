@@ -1,0 +1,13 @@
+---
+caddy_config_dir: /etc/caddy
+caddy_caddyfile: "{{ caddy_config_dir }}/Caddyfile"
+
+caddy_routes:
+  - from: "radarr.{{ reverse_proxy_domain }}"
+    to: "http://{{ reverse_proxy_media_host }}:7878"
+  - from: "sonarr.{{ reverse_proxy_domain }}"
+    to: "http://{{ reverse_proxy_media_host }}:8989"
+  - from: "prowlarr.{{ reverse_proxy_domain }}"
+    to: "http://{{ reverse_proxy_media_host }}:9696"
+  - from: "bazarr.{{ reverse_proxy_domain }}"
+    to: "http://{{ reverse_proxy_media_host }}:6767"

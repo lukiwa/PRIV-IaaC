@@ -1,13 +1,14 @@
 # Ansible
 
-Post-provision customization for MicroOS VMs: package installation and Podman Quadlet container orchestration.
+Post-provision customization for VMs and LXC containers: package updates and Podman Quadlet container orchestration.
 
-Each VM has a dedicated role. `run.yaml` runs a separate play per host.
+Each host has a dedicated role. `run.yaml` runs a separate play per host.
 
-| Host | Role | Vars |
-| --- | --- | --- |
-| `media` | `roles/media` | [roles/media/vars/main.yaml](roles/media/vars/main.yaml) |
-| `infra` | `roles/infra` | [roles/infra/vars/main.yaml](roles/infra/vars/main.yaml) |
+| Host | OS | Role | Vars |
+| --- | --- | --- | --- |
+| `media` | MicroOS | `roles/media` | [roles/media/vars/main.yaml](roles/media/vars/main.yaml) |
+| `infra` | MicroOS | `roles/infra` | [roles/infra/vars/main.yaml](roles/infra/vars/main.yaml) |
+| `unifi` | Debian | `roles/unifi` | [host_vars/unifi.yaml](host_vars/unifi.yaml) |
 
 ## Usage
 
@@ -31,7 +32,26 @@ ansible-playbook run.yaml --limit infra
 
 ## How it works
 
-- Installs packages from `<role>_packages`.
+### Package updates (`roles/packages`)
+
+Every play runs the `packages` role first (tagged `packages`). It detects the OS and runs the appropriate update logic:
+
+| OS | Method |
+| --- | --- |
+| Debian | `apt dist-upgrade` + `autoremove` + reboot if `/var/run/reboot-required` |
+| openSUSE MicroOS | `transactional-update up` + reboot if required |
+| Alpine | `apk update && apk upgrade` |
+
+To install additional packages on a host, set `packages_list` in the host's vars:
+
+```yaml
+packages_list:
+  - podman
+  - tree
+```
+
+### Containers
+
 - Orchestrates containers defined in `<role>_containers`.
 - Uses Podman Quadlet for systemd-managed containers.
   - User-scope: `~/.config/containers/systemd/`
@@ -138,3 +158,13 @@ To force re-generation of `Preferences.xml`, set `force_reprovision: true` in th
 ## Notes
 
 When reprovisioning a VM, delete the old entry from `known_hosts` before running the playbook.
+
+### Alpine LXC — SSH not available after first boot
+
+Alpine LXC templates from Proxmox do not start sshd by default. After provisioning, log in via Proxmox console and run:
+
+```sh
+apk add openssh
+rc-update add sshd default
+rc-service sshd start
+```

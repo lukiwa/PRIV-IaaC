@@ -1,0 +1,6 @@
+{% for route in caddy_routes %}
+{{ route.from }} {
+	reverse_proxy {{ route.to }}
+}
+
+{% endfor %}
