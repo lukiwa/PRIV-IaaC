@@ -25,3 +25,21 @@
       tags: packages
     - role: unifi
       tags: unifi
+
+- name: Caddy
+  hosts: caddy
+  become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Bootstrap Python on Alpine
+      ansible.builtin.raw: apk add --no-cache python3
+      changed_when: false
+      tags: always
+    - name: Gather facts
+      ansible.builtin.gather_facts:
+      tags: always
+  roles:
+    - role: packages
+      tags: packages
+    - role: caddy
+      tags: caddy

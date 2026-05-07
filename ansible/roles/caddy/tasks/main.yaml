@@ -1,0 +1,31 @@
+---
+- name: Install Caddy
+  community.general.apk:
+    name: caddy
+    state: present
+
+- name: Ensure config directory exists
+  ansible.builtin.file:
+    path: "{{ caddy_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Template Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_caddyfile }}"
+    mode: "0644"
+    validate: caddy validate --adapter caddyfile --config %s
+
+- name: Enable Caddy service at boot
+  ansible.builtin.command: rc-update add caddy default
+  args:
+    creates: /etc/runlevels/default/caddy
+
+- name: Restart Caddy service (always after config change)
+  ansible.builtin.command: rc-service caddy restart
+  register: caddy_restart_result
+  changed_when: "'started' in caddy_restart_result.stdout or 'restarted' in caddy_restart_result.stdout"
+  failed_when:
+    - caddy_restart_result.rc != 0
+    - "'already started' not in caddy_restart_result.stdout and 'restarted' not in caddy_restart_result.stdout and 'started' not in caddy_restart_result.stdout"

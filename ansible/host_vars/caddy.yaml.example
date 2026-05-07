@@ -1,0 +1,9 @@
+# op inject -i caddy.yaml.example -o caddy.yaml
+---
+ansible_host: "{{op://Private/Proxmox-T620-Caddy/ip}}"
+ansible_become_password: "{{op://Private/Proxmox-T620-Caddy/password}}"
+ansible_user: "{{op://Private/Proxmox-T620-Caddy/user}}"
+ansible_python_interpreter: /usr/bin/python3
+
+reverse_proxy_media_host: "{{op://Private/Proxmox-T620-Media/ip}}"
+reverse_proxy_domain: "{{op://Private/Proxmox-T620-Caddy/domain}}"
