@@ -11,4 +11,3 @@ caddy_routes:
     to: "http://{{ reverse_proxy_media_host }}:9696"
   - from: "bazarr.{{ reverse_proxy_domain }}"
     to: "http://{{ reverse_proxy_media_host }}:6767"
-
