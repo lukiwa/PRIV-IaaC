@@ -37,8 +37,24 @@
       mode: "0775"
     - path: "{{ media_quadlet_user_dir }}"
       mode: "0755"
+    - path: "{{ media_podman_storage_dir }}"
+      mode: "0755"
+    - path: "/home/{{ ansible_user }}/.config/containers"
+      mode: "0755"
   loop_control:
     loop_var: media_dir_item
+  become: true
+
+- name: Configure podman storage location
+  ansible.builtin.copy:
+    dest: "/home/{{ ansible_user }}/.config/containers/storage.conf"
+    content: |
+      [storage]
+      driver = "overlay"
+      graphRoot = "{{ media_podman_storage_dir }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
   become: true
 
 - name: Enable systemd linger for quadlet user

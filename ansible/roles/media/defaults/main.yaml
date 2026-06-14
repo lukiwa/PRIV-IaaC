@@ -3,6 +3,7 @@ media_quadlet_auto_update: true
 media_project_dir: /var/lib/media
 media_data_dir: "{{ media_project_dir }}/data"
 media_mount_root: /var/mnt/external
+media_podman_storage_dir: "{{ media_project_dir }}/containers/storage"
 
 media_quadlet_options_main:
   - |
@@ -17,7 +18,7 @@ media_quadlet_options_main:
     [Service]
     Restart=always
     RestartSec=5
-    TimeoutStartSec=600
+    TimeoutStartSec=infinity
   - |
     [Install]
     WantedBy=default.target
