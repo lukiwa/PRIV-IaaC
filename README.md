@@ -7,8 +7,6 @@ Some documentation parts were written by Copilot thus may be a bit misleading or
 > [!WARNING]
 Some parts of the project are tied to my Homelab environment (server names and hardware, 1Password paths, OPNsense configuration, HDD ids, etc.),
 
-Infrastructure as Code repository for personal environments.
-
 ## Installing and pre-configuring `proxmox`
 
 - flash with USB/balena,
