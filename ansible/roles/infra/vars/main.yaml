@@ -1,9 +1,0 @@
----
-infra_containers:
-  - name: traefik
-    task: containers/traefik.yaml
-    config_dir: "{{ infra_data_dir }}/traefik"
-    network:
-      - host
-    meta:
-      env: {}
