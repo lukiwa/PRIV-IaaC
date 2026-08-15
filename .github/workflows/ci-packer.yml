@@ -39,7 +39,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          mapfile -d '' templates < <(find . -type f -name '*.pkr.hcl' ! -name 'config.pkr.hcl' ! -name 'variables.pkr.hcl' ! -name 'variables_secrets.pkr.hcl' ! -name '*.example' -print0)
+          mapfile -d '' templates < <(find . -type f -name '*.pkr.hcl' ! -name 'config.pkr.hcl' ! -name 'variables.pkr.hcl' \
+          ! -name 'variables_secrets.pkr.hcl' ! -name '*.example' -print0)
 
           if [[ ${#templates[@]} -eq 0 ]]; then
             echo "No Packer templates found."
