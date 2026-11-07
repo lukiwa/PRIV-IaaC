@@ -1,0 +1,52 @@
+---
+- name: Install repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - gnupg
+      - python3-apt
+    state: present
+    update_cache: true
+
+- name: Download Homebridge repository signing key
+  ansible.builtin.get_url:
+    url: https://repo.homebridge.io/KEY.gpg
+    dest: /usr/share/keyrings/homebridge-key.asc
+    mode: "0644"
+  register: homebridge_repository_key
+
+- name: Check converted signing key
+  ansible.builtin.stat:
+    path: /usr/share/keyrings/homebridge.gpg
+  register: homebridge_keyring
+
+- name: Convert Homebridge repository signing key
+  ansible.builtin.command:
+    argv:
+      - gpg
+      - --batch
+      - --yes
+      - --dearmor
+      - --output
+      - /usr/share/keyrings/homebridge.gpg
+      - /usr/share/keyrings/homebridge-key.asc
+  when: homebridge_repository_key.changed or not homebridge_keyring.stat.exists
+  changed_when: true
+
+- name: Configure Homebridge repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/homebridge.gpg] https://repo.homebridge.io stable main"
+    filename: homebridge
+    state: present
+    update_cache: true
+
+- name: Install Homebridge
+  ansible.builtin.apt:
+    name: homebridge
+    state: present
+
+- name: Enable and start Homebridge
+  ansible.builtin.systemd:
+    name: homebridge
+    enabled: true
+    state: started

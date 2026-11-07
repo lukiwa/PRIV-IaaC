@@ -9,6 +9,7 @@ Each host has a dedicated role. `run.yaml` runs a separate play per host.
 | `media` | MicroOS | `roles/media` | [roles/media/vars/main.yaml](roles/media/vars/main.yaml) |
 | `infra` | MicroOS | `roles/infra` | [roles/infra/vars/main.yaml](roles/infra/vars/main.yaml) |
 | `unifi` | Debian | `roles/unifi` | [host_vars/unifi.yaml](host_vars/unifi.yaml) |
+| `homebridge` | Debian | `roles/homebridge` | [host_vars/homebridge.yaml.example](host_vars/homebridge.yaml.example) |
 
 ## Usage
 
@@ -168,3 +169,31 @@ apk add openssh
 rc-update add sshd default
 rc-service sshd start
 ```
+
+## Homebridge
+
+The `debian-lxc-homebridge` Terragrunt unit creates an unprivileged Debian LXC on
+`vmbr1` with DHCP and VMID 103. Check that the VMID is free in Proxmox and that
+`vmbr1` reaches the network used by HomeKit devices. Create the
+`Proxmox-T620-Homebridge` item in 1Password with `macaddr`, `public key`,
+`password`, `ip`, and `user` fields, or adjust the example files to match your
+setup. Reserve the DHCP address if using the IP in 1Password.
+
+```bash
+cd terraform
+./setup.sh
+cd live/proxmox/t620/debian-lxc-homebridge
+terragrunt init
+terragrunt plan
+terragrunt apply
+
+cd ../../../../../ansible
+./setup.sh
+ansible-playbook run.yaml --limit homebridge
+```
+
+Open `http://<homebridge-ip>:8581` to finish setup and pair Homebridge with
+Apple Home. HomeKit discovery uses mDNS; the relevant networks and firewall
+must allow multicast and HomeKit traffic. Homebridge configuration and plugins
+are stored in `/var/lib/homebridge`; include this directory in backups.
+See the [Homebridge installation guide](https://github.com/homebridge/homebridge/wiki/Install-Homebridge-on-Debian-or-Ubuntu-Linux).

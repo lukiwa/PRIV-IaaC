@@ -1,0 +1,5 @@
+# op inject -i homebridge.yaml.example -o homebridge.yaml
+---
+ansible_host: "{{op://Private/Proxmox-T620-Homebridge/ip}}"
+ansible_become_password: "{{op://Private/Proxmox-T620-Homebridge/password}}"
+ansible_user: "{{op://Private/Proxmox-T620-Homebridge/user}}"
