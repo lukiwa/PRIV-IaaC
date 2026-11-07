@@ -34,3 +34,12 @@
       tags: packages
     - role: caddy
       tags: caddy
+
+- name: Homebridge
+  hosts: homebridge
+  become: true
+  roles:
+    - role: packages
+      tags: packages
+    - role: homebridge
+      tags: homebridge
