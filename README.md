@@ -79,6 +79,13 @@ terragrunt plan
 terragrunt apply
 ```
 
+## OPNsense scripts
+
+The [HomeKit Wake-on-LAN relay](scripts/opnsense/README.md)
+forwards a home hub's Ethernet wake requests to a TV on another subnet using
+os-wol. Its standalone installer includes an editable configuration block;
+fill in network addresses in your private copy on OPNsense.
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0.
